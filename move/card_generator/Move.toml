@@ -1,0 +1,11 @@
+[package]
+name = "card_generator"
+edition = "2024.beta"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet", override = true }
+custom_random = { local = "../custom_random" }
+
+[addresses]
+card_generator = "0x0"
+custom_random = "0xbfb7bde64df8b24085a94328032ec820796cd01788fd1f3c304235f1fcdcaf28"
