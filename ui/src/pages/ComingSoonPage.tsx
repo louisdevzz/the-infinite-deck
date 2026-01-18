@@ -1,11 +1,11 @@
 import { Link } from 'react-router-dom';
-import { Header } from '../components/shared/Header';
+
 import { Footer } from '../components/shared/Footer';
 
 export const ComingSoonPage: React.FC = () => {
     return (
         <div className="bg-background-dark font-display text-white selection:bg-primary/30 min-h-screen flex flex-col relative overflow-hidden">
-            <Header />
+
 
             <div className="flex-1 flex flex-col items-center justify-center relative z-10 p-8">
                 {/* Background Grid */}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 // Chat Interface built with Shared Components
-import { Header } from '../../components/shared/Header';
+import { BackButton } from '../../components/shared/BackButton';
 import { Footer } from '../../components/shared/Footer';
 import { CommandTerminal } from './components/CommandTerminal';
 import { ForgeDisplay } from './components/ForgeDisplay';
@@ -86,7 +86,7 @@ export const ChatPage: React.FC = () => {
 
     return (
         <div className="bg-background-dark text-white overflow-hidden h-screen flex flex-col">
-            <Header />
+            <BackButton />
             <main className="flex-1 flex overflow-hidden">
                 <CommandTerminal
                     logs={logs}

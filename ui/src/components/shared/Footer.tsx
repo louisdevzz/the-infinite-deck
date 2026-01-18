@@ -15,7 +15,7 @@ export const Footer: React.FC = () => {
                     <span className="text-primary font-mono text-[9px] tracking-widest">NEURAL SYNC: STABLE</span>
                 </div>
                 <div className="flex items-center gap-2 text-white/20 text-[9px] uppercase tracking-widest">
-                    <span>CYPHER_KERNEL V4.2.0</span>
+                    <span>INFINITE_KERNEL V4.2.0</span>
                 </div>
             </div>
         </footer>

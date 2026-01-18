@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Header } from '../../components/shared/Header';
+import { BackButton } from '../../components/shared/BackButton';
 import { Footer } from '../../components/shared/Footer';
 import { CardDetailPanel } from '../../components/inventory/CardDetailPanel';
 import { ActiveDeck } from '../../components/inventory/ActiveDeck';
@@ -87,7 +87,7 @@ export const InventoryPage: React.FC = () => {
 
     return (
         <div className="bg-background-dark text-white overflow-hidden h-screen flex flex-col relative">
-            <Header />
+            <BackButton />
             <main className="flex-1 flex overflow-hidden">
                 <PageTransition>
                     <div className="flex w-full h-full">

@@ -29,25 +29,22 @@ export const RightHUD: React.FC = () => {
                 </div>
             </div>
 
-            {/* Event Notification */}
-            <div className="glass-panel p-6 rounded-xl border border-accent-magenta/30 bg-accent-magenta/5 relative group hover:bg-accent-magenta/10 transition-all">
-                {/* Glow Background */}
-                <div className="absolute inset-0 bg-accent-magenta/5 blur-xl group-hover:bg-accent-magenta/10 transition-all"></div>
-
-                <div className="absolute -top-px left-1/2 -translate-x-1/2 px-3 py-0.5 bg-accent-magenta text-[8px] font-bold text-white rounded-b-lg tracking-[0.2em] uppercase shadow-[0_0_10px_rgba(255,0,255,0.5)]">Limited Time</div>
-                <div className="flex flex-col items-center text-center gap-3 mt-2 relative z-10">
-                    <div className="p-3 bg-accent-magenta/10 rounded-full border border-accent-magenta/20">
-                        <span className="material-symbols-outlined text-accent-magenta text-3xl">celebration</span>
-                    </div>
-                    <div>
-                        <p className="text-white font-bold text-sm font-display tracking-wide">NEON OVERDRIVE</p>
-                        <p className="text-white/50 text-[10px] leading-tight mt-1">Special boosters available in shop for limited time.</p>
-                    </div>
-                    <button className="w-full py-2 bg-accent-magenta/20 hover:bg-accent-magenta/30 text-accent-magenta text-[10px] font-black tracking-widest uppercase rounded border border-accent-magenta/40 transition-all hover:scale-105 active:scale-95">
-                        VIEW DETAILS
-                    </button>
+            {/* Network Activity Panel */}
+            <div className="glass-panel p-6 rounded-xl border border-white/5 relative overflow-hidden flex flex-col gap-3">
+                <h4 className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em] font-display">Network Traffic</h4>
+                <div className="flex items-end gap-1 h-12 w-full">
+                    {[30, 50, 20, 60, 40, 80, 50, 30, 70, 40, 60, 90, 50, 30, 60, 40].map((h, i) => (
+                        <div key={i} className="flex-1 bg-primary/20 hover:bg-primary/50 transition-colors rounded-sm relative group" style={{ height: `${h}%` }}>
+                            <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary/50 group-hover:bg-primary"></div>
+                        </div>
+                    ))}
+                </div>
+                <div className="flex justify-between text-[8px] font-mono text-primary/50">
+                    <span>UPLOAD: 4.2 MB/s</span>
+                    <span>DOWNLOAD: 12.5 MB/s</span>
                 </div>
             </div>
+
 
             {/* Bottom Right Action Icons */}
             <div className="flex justify-end gap-3 mt-4">
