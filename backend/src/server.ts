@@ -6,6 +6,8 @@ import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
 import { WalrusClient, RetryableWalrusClientError } from "@mysten/walrus";
+import * as fs from "fs";
+import * as path from "path";
 
 dotenv.config();
 
@@ -35,11 +37,38 @@ const walrusClient = new WalrusClient({
   suiClient: suiClient,
 });
 
-// Initialize keypair for Walrus uploads (if provided)
+// ✨ THÊM MỚI: Reference images configuration
+const RARITY_NAMES = ["Common", "Uncommon", "Epic", "Legendary"];
+
+const REFERENCE_IMAGES: Record<number, string> = {
+  0: "reference_common.jpg",
+  1: "reference_uncommon.jpg", 
+  2: "reference_epic.jpg",
+  3: "reference_legendary.jpg"
+};
+
+const ELEMENT_ICONS: Record<string, string> = {
+  "Fire": "🔥",
+  "Water": "💧",
+  "Earth": "🌍",
+  "Lightning": "⚡",
+  "Dark": "🌑",
+  "Light": "✨"
+};
+
+const ELEMENT_STYLES: Record<string, string> = {
+  "Fire": "surrounded by flames and embers, warm orange and red tones, fiery atmosphere",
+  "Water": "surrounded by flowing water and bubbles, cool blue tones, aquatic atmosphere",
+  "Earth": "surrounded by rocks and nature, green and brown tones, natural atmosphere",
+  "Lightning": "surrounded by electric sparks and lightning bolts, bright yellow and purple tones, electric atmosphere",
+  "Dark": "surrounded by shadows and dark energy, deep purple and black tones, mysterious atmosphere",
+  "Light": "surrounded by radiant light and sparkles, bright white and golden tones, divine atmosphere"
+};
+
+// Initialize keypair
 let walrusKeypair: Ed25519Keypair | null = null;
 if (process.env.SUI_PRIVATE_KEY) {
   try {
-    // Support both suiprivkey format and hex format
     const privateKey = process.env.SUI_PRIVATE_KEY;
     if (privateKey.startsWith("suiprivkey")) {
       const decoded = decodeSuiPrivateKey(privateKey);
@@ -56,6 +85,26 @@ if (process.env.SUI_PRIVATE_KEY) {
     console.warn("⚠ Failed to initialize Walrus keypair:", error);
   }
 }
+
+// ✨ THÊM MỚI: Check reference images on startup
+console.log("🖼️  Checking reference images...");
+const referencesDir = path.join(process.cwd(), "references");
+if (!fs.existsSync(referencesDir)) {
+  console.warn("⚠️  Creating references/ folder...");
+  fs.mkdirSync(referencesDir, { recursive: true });
+}
+
+let foundReferences = 0;
+for (const [rarity, filename] of Object.entries(REFERENCE_IMAGES)) {
+  const refPath = path.join(referencesDir, filename);
+  if (fs.existsSync(refPath)) {
+    console.log(`  ✅ ${RARITY_NAMES[parseInt(rarity)]}: ${filename}`);
+    foundReferences++;
+  } else {
+    console.log(`  ⚠️  ${RARITY_NAMES[parseInt(rarity)]}: ${filename} (missing)`);
+  }
+}
+console.log(`📊 Found ${foundReferences}/4 reference images\n`);
 
 // Health check
 app.get("/health", (req: Request, res: Response) => {
@@ -93,7 +142,6 @@ No additional text, just the JSON.`;
     const response = await result.response;
     const text = response.text();
 
-    // Parse JSON from response
     const jsonMatch = text.match(/\{[^}]+\}/);
     if (!jsonMatch) {
       throw new Error("Failed to parse JSON from Gemini response");
@@ -117,46 +165,88 @@ No additional text, just the JSON.`;
   }
 });
 
-// Generate card image using Gemini
+// ✨ CẬP NHẬT: Generate card image WITH REFERENCE
+
+// Generate card image using Gemini WITH REFERENCE
 app.post("/api/generate-image", async (req: Request, res: Response) => {
   try {
-    const { name, element, description } = req.body;
+    const { name, element, description, rarity = 0 } = req.body;
 
     if (!name || !element) {
       return res.status(400).json({ error: "Name and element are required" });
     }
 
-    console.log(`🎨 Generating image for: ${name} (${element})`);
+    console.log(`🎨 Generating ${RARITY_NAMES[rarity]} card: "${name}" (${element})`);
 
-    const imagePrompt = `Create a fantasy trading card illustration for "${name}", a ${element} element card.
+    const elementStyle = ELEMENT_STYLES[element] || "mystical energy surrounding";
 
-Description: ${description || "A powerful mystical entity"}
+    // Load reference image based on rarity
+    let referenceBase64: string | null = null;
+    const referenceFilename = REFERENCE_IMAGES[rarity];
+    const referencePath = path.join(process.cwd(), "references", referenceFilename);
+    
+    if (fs.existsSync(referencePath)) {
+      const referenceBuffer = fs.readFileSync(referencePath);
+      referenceBase64 = referenceBuffer.toString("base64");
+      console.log(`🖼️  Using reference: ${referenceFilename}`);
+    } else {
+      console.warn(`⚠️  Reference image not found: ${referencePath}`);
+    }
 
-Style requirements:
-- Epic fantasy art style with vibrant colors matching the ${element} element
-- Dramatic lighting and composition
-- Suitable for a collectible card game
-- High detail and quality
-- Portrait orientation (vertical)
-- No text, no card borders, just the character/creature artwork
-- Professional digital art quality`;
+    // Enhanced prompt with reference instructions
+    const imagePrompt = `Create a high-quality fantasy character illustration for a trading card game.
 
-    // Use Gemini 2.0 Flash Exp for image generation
+${referenceBase64 ? "REFERENCE IMAGE: Study the art style, quality, and atmosphere from the reference image. Learn from its composition, lighting, and detail level. But DO NOT copy any frames, borders, text, or UI elements." : ""}
+
+CHARACTER: ${name} - ${description || "A powerful mystical entity"}
+
+STYLE REQUIREMENTS:
+- Epic fantasy art style, detailed and vibrant
+- ${elementStyle}
+- ${RARITY_NAMES[rarity]} quality: ${rarity === 3 ? "extremely detailed, masterpiece quality" : rarity === 2 ? "high detail, premium quality" : rarity === 1 ? "good detail, quality artwork" : "standard fantasy art"}
+- Dynamic pose showing power and personality
+- Cosmic/magical background with stars and energy swirls
+- Full body or upper body portrait
+- Professional trading card game artwork quality
+- Match the artistic quality and atmosphere from the reference
+
+DO NOT INCLUDE:
+- No text, numbers, or card stats
+- No borders or frames
+- No card template elements
+- No blank or white parts on image
+- Just the pure character artwork
+
+Focus on creating beautiful, powerful character art with ${element} theme that matches the reference's quality and style.`;
+
+    console.log("🎨 Generating character artwork with reference...");
+
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
-    const result = await model.generateContent([imagePrompt]);
+    
+    // ✅ FIX: Build parts array correctly
+    const parts: any[] = [imagePrompt];
+    
+    if (referenceBase64) {
+      parts.push({
+        inlineData: {
+          mimeType: "image/jpeg",
+          data: referenceBase64
+        }
+      });
+    }
+
+    // ✅ FIX: Call generateContent with array directly
+    const result = await model.generateContent(parts);
     const response = await result.response;
 
-    // Extract image from inline data
+    // Extract image from response
     let imageBase64: string | null = null;
 
     for (const candidate of response.candidates || []) {
       for (const part of candidate.content?.parts || []) {
-        // Check if part has inlineData (image)
         if ((part as any).inlineData) {
           imageBase64 = (part as any).inlineData.data;
-          console.log(
-            `✅ Image generated successfully (${imageBase64.length} bytes)`,
-          );
+          console.log(`✅ Image generated successfully`);
           break;
         }
       }
@@ -167,14 +257,14 @@ Style requirements:
       throw new Error("No image data returned from Gemini");
     }
 
-    // Return base64 image as data URL
     const imageUrl = `data:image/png;base64,${imageBase64}`;
 
     res.json({
       success: true,
       imageUrl,
-      prompt: imagePrompt,
-      note: "Image generated by Gemini AI",
+      rarity: RARITY_NAMES[rarity],
+      usedReference: !!referenceBase64,
+      note: "Image generated with style reference from local reference images",
     });
   } catch (error: any) {
     console.error("Error generating image:", error);
@@ -184,6 +274,7 @@ Style requirements:
     });
   }
 });
+
 
 // Upload image to Walrus
 app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
@@ -293,16 +384,11 @@ app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
   }
 });
 
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Backend server running on http://localhost:${PORT}`);
-  console.log(
-    `📡 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`,
-  );
-  console.log(
-    `🔑 Gemini API Key: ${process.env.GEMINI_API_KEY ? "✓ Set" : "✗ Not set"}`,
-  );
-  console.log(
-    `🌊 Walrus Keypair: ${walrusKeypair ? "✓ Configured" : "✗ Not configured (uploads will use placeholder)"}`,
-  );
+  console.log(`📡 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
+  console.log(`🔑 Gemini API Key: ${process.env.GEMINI_API_KEY ? "✓ Set" : "✗ Not set"}`);
+  console.log(`🌊 Walrus Keypair: ${walrusKeypair ? "✓ Configured" : "✗ Not configured"}`);
 });

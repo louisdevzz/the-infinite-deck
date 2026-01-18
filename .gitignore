@@ -2,3 +2,28 @@ node_modules
 move/the-infinite-deck/build
 move/the-infinite-deck/Move.lock
 account.txt
+
+# .gitignore
+node_modules/
+package-lock.json
+*.log
+dist/
+
+# Move build artifacts
+**/build/
+
+# Keep only source files
+move/**/sources/dependencies/
+
+# Backend
+backend/node_modules/
+backend/dist/
+
+# UI
+ui/node_modules/
+ui/dist/
+
+# Generated images (nếu không muốn commit)
+*.png
+!backend/references/*.jpg
+!backend/references/*.png
