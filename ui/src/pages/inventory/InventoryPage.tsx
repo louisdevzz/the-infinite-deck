@@ -1,117 +1,183 @@
-import React, { useState } from 'react';
-import { BackButton } from '../../components/shared/BackButton';
-import { Footer } from '../../components/shared/Footer';
-import { CardDetailPanel } from '../../components/inventory/CardDetailPanel';
-import { ActiveDeck } from '../../components/inventory/ActiveDeck';
-import { Backpack } from '../../components/inventory/Backpack';
-import { CARDS_DATA } from '../../data/mockData';
-import { useToast } from '../../context/ToastContext';
-import { PageTransition } from '../../components/shared/PageTransition';
-
-import { useUser } from '../../context/UserContext';
+import React, { useState, useEffect } from "react";
+import { BackButton } from "../../components/shared/BackButton";
+import { CardDetailPanel } from "../../components/inventory/CardDetailPanel";
+import { ActiveDeck } from "../../components/inventory/ActiveDeck";
+import { Backpack } from "../../components/inventory/Backpack";
+import { useToast } from "../../context/ToastContext";
+import { PageTransition } from "../../components/shared/PageTransition";
+import { usePlayerProfile } from "../../hooks/usePlayerProfile";
+import { useCards } from "../../hooks/useCards";
 
 export const InventoryPage: React.FC = () => {
-    // Selection State
-    const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  // Selection State
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
-    // Deck is an array of size 5, containing card IDs or null
-    const [deck, setDeck] = useState<(string | null)[]>([null, null, null, null, null]);
+  // Profile Hook
+  const {
+    profile,
+    loading: profileLoading,
+    selectBattleDeck,
+    syncCards,
+  } = usePlayerProfile();
 
-    // Use Global Backpack State
-    const { backpack, addToBackpack, removeFromBackpack } = useUser();
+  // Cards Hook
+  const { cards, fetchCards } = useCards();
 
-    // Global Toast Hook
-    const { showToast } = useToast();
+  // Deck State (5 slots)
+  const [deck, setDeck] = useState<(string | null)[]>([
+    null,
+    null,
+    null,
+    null,
+    null,
+  ]);
 
-    const handleCardSelect = (id: string) => {
-        setSelectedCardId(id);
-    };
+  // Global Toast Hook
+  const { showToast } = useToast();
 
-    const handleEquip = () => {
-        if (!selectedCardId) return;
+  // Load backend data into local state
+  useEffect(() => {
+    if (profile) {
+      // Fetch all cards mentioned in profile
+      const allIds = [
+        ...(profile.allCards || []),
+        ...(profile.selectedDeck || []),
+      ];
+      if (allIds.length > 0) {
+        fetchCards(allIds);
+      }
 
-        // Check if card is already in deck (shouldn't be if triggered from backpack, but safe check)
-        if (deck.includes(selectedCardId)) return;
-
-        // Find first empty slot
-        const emptySlotIndex = deck.findIndex(slot => slot === null);
-        if (emptySlotIndex === -1) {
-            showToast('WARNING', 'SYSTEM ALERT', "ACTIVE DECK IS FULL! REMOVE A NODE FIRST.");
-            return;
-        }
-
-        const newDeck = [...deck];
-        newDeck[emptySlotIndex] = selectedCardId;
+      // Set deck from profile (ensure exactly 5 slots)
+      if (profile.selectedDeck && profile.selectedDeck.length > 0) {
+        const newDeck = [...profile.selectedDeck];
+        while (newDeck.length < 5) newDeck.push(null as any);
         setDeck(newDeck);
+      }
+    }
+  }, [profile, fetchCards]);
 
-        removeFromBackpack(selectedCardId);
-        showToast('SUCCESS', 'SYSTEM UPDATE', `NODE EQUIPPED: ${selectedCardId}`);
-    };
+  console.log("deck", deck);
 
-    const handleUnequip = () => {
-        if (!selectedCardId) return;
+  const handleCardSelect = (id: string) => {
+    setSelectedCardId(id);
+  };
 
-        setDeck(prev => prev.map(id => id === selectedCardId ? null : id));
-        addToBackpack(selectedCardId);
-        showToast('INFO', 'SYSTEM UPDATE', `NODE RETURNED TO STORAGE: ${selectedCardId}`);
-    };
+  const handleEquip = () => {
+    if (!selectedCardId) return;
 
-    const handleClearDeck = () => {
-        // Always clear selected view when clicking Clear All
-        setSelectedCardId(null);
+    // Check if card is already in deck
+    if (deck.includes(selectedCardId)) return;
 
-        // Get all cards currently in the deck
-        const cardsToReturn = deck.filter((id): id is string => id !== null);
+    // Find first empty slot
+    const emptySlotIndex = deck.findIndex((slot) => slot === null);
+    if (emptySlotIndex === -1) {
+      showToast(
+        "WARNING",
+        "SYSTEM ALERT",
+        "ACTIVE DECK IS FULL! REMOVE A NODE FIRST.",
+      );
+      return;
+    }
 
-        if (cardsToReturn.length === 0) {
-            showToast('INFO', 'SYSTEM MSG', "ACTIVE DECK IS ALREADY EMPTY.");
-            return;
-        }
+    const newDeck = [...deck];
+    newDeck[emptySlotIndex] = selectedCardId;
+    setDeck(newDeck);
 
-        // Reset deck to all nulls
-        setDeck([null, null, null, null, null]);
+    showToast("SUCCESS", "SYSTEM UPDATE", `NODE EQUIPPED`);
+  };
 
-        // return cards to backpack
-        cardsToReturn.forEach(id => addToBackpack(id));
+  const handleUnequip = () => {
+    if (!selectedCardId) return;
 
-        // Clear selected card view
-        setSelectedCardId(null);
+    setDeck((prev) => prev.map((id) => (id === selectedCardId ? null : id)));
+    showToast("INFO", "SYSTEM UPDATE", `NODE RETURNED TO STORAGE`);
+  };
 
-        showToast('SUCCESS', 'OPERATION COMPLETE', "ACTIVE DECK CLEARED. NODES RETURNED TO STORAGE.");
-    };
+  const handleClearDeck = () => {
+    setSelectedCardId(null);
+    setDeck([null, null, null, null, null]);
+    showToast("SUCCESS", "OPERATION COMPLETE", "ACTIVE DECK CLEARED.");
+  };
 
-    const selectedCardData = selectedCardId ? CARDS_DATA[selectedCardId] : null;
+  const handleSaveDeck = async () => {
+    const validCards = deck.filter((id) => id !== null) as string[];
+    if (validCards.length !== 5) {
+      showToast("WARNING", "ERROR", "DECK MUST HAVE 5 CARDS");
+      return;
+    }
+    try {
+      await selectBattleDeck(validCards);
+      showToast("SUCCESS", "SAVED", "BATTLE DECK UPDATED ON-CHAIN");
+    } catch (e: any) {
+      showToast("WARNING", "ERROR", e.message || "FAILED TO SAVE");
+    }
+  };
 
-    // Determine if the selected card is currently equipped
-    const isEquipped = selectedCardId ? deck.includes(selectedCardId) : false;
+  const handleSync = async () => {
+    try {
+      showToast("INFO", "SYNCING", "SCANNING FOR NEW NODES...");
+      await syncCards();
+      showToast("SUCCESS", "SYNCED", "COLLECTION UPDATED");
+    } catch (e: any) {
+      showToast("WARNING", "ERROR", "SYNC FAILED: " + e.message);
+    }
+  };
 
-    return (
-        <div className="bg-background-dark text-white overflow-hidden h-screen flex flex-col relative">
-            <BackButton />
-            <main className="flex-1 flex overflow-hidden">
-                <PageTransition>
-                    <div className="flex w-full h-full">
-                        <CardDetailPanel
-                            selectedCard={selectedCardData}
-                            isEquipped={isEquipped}
-                            onEquip={handleEquip}
-                            onUnequip={handleUnequip}
-                        />
-                        <ActiveDeck
-                            deck={deck}
-                            selectedCardId={selectedCardId}
-                            onCardSelect={handleCardSelect}
-                            onClearDeck={handleClearDeck}
-                        />
-                        <Backpack
-                            items={backpack}
-                            selectedCardId={selectedCardId}
-                            onCardSelect={handleCardSelect}
-                        />
-                    </div>
-                </PageTransition>
-            </main>
-            <Footer />
-        </div>
-    );
+  const selectedCardData = selectedCardId ? cards[selectedCardId] : null;
+
+  // Determine if the selected card is currently equipped
+  const isEquipped = selectedCardId ? deck.includes(selectedCardId) : false;
+
+  // Backpack items are allCards excluding those in the current deck
+  const backpackItems = (profile?.allCards || []).filter(
+    (id: string) => !deck.includes(id),
+  );
+
+  return (
+    <div className="bg-background-dark text-white overflow-hidden h-screen flex flex-col relative">
+      <BackButton />
+
+      {/* Top Right Controls */}
+      <div className="absolute top-4 right-8 z-50 flex gap-4">
+        <button
+          onClick={handleSync}
+          className="px-4 py-2 bg-zinc-800 text-primary border border-primary/30 rounded hover:bg-zinc-700 text-xs font-bold tracking-widest"
+        >
+          SYNC COLLECTION
+        </button>
+        <button
+          onClick={handleSaveDeck}
+          className="px-6 py-2 bg-primary text-black font-bold rounded hover:bg-primary/80 text-xs tracking-widest"
+        >
+          SAVE DECK
+        </button>
+      </div>
+
+      <main className="flex-1 flex overflow-hidden">
+        <PageTransition>
+          <div className="flex w-full h-full">
+            <CardDetailPanel
+              selectedCard={selectedCardData}
+              isEquipped={isEquipped}
+              onEquip={handleEquip}
+              onUnequip={handleUnequip}
+            />
+            <ActiveDeck
+              deck={deck}
+              cards={cards}
+              selectedCardId={selectedCardId}
+              onCardSelect={handleCardSelect}
+              onClearDeck={handleClearDeck}
+            />
+            <Backpack
+              items={backpackItems} // This expects string[]
+              cards={cards}
+              selectedCardId={selectedCardId}
+              onCardSelect={handleCardSelect}
+            />
+          </div>
+        </PageTransition>
+      </main>
+    </div>
+  );
 };

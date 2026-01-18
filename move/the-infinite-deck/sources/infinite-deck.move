@@ -13,6 +13,7 @@ module infinite_deck::game {
     use std::string::{Self, String};
     use sui::event;
     use sui::random::{Self, Random};
+    use infinite_deck::player_profile;
 
     // ==================== Error Codes ====================
     
@@ -27,6 +28,7 @@ module infinite_deck::game {
     const EBattleAlreadyEnded: u64 = 9;
     const ECardNotInDeck: u64 = 10;
     const EInvalidElement: u64 = 11;
+    const ECardLockedInLobby: u64 = 12;
 
     // ==================== Constants ====================
     
@@ -53,14 +55,18 @@ module infinite_deck::game {
     public struct Card has key, store {
         id: UID,
         name: String,
-        element: u8,
+        element: u8,              // For battle logic (0-4)
+        element_name: String,     // For display ("Fire", "Water", etc.)
+        rarity: u8,               // 0=Common, 1=Uncommon, 2=Epic, 3=Legendary
         hp: u64,
         max_hp: u64,
         atk: u64,
         def: u64,
+        power_score: u64,         // Original 0-2000 score from quadratic_random
         image_url: String,
         owner: address,
         in_battle: bool,
+        locked_in_lobby: bool,    // Locked during matchmaking
     }
 
     /// Represents an active battle between two players
@@ -93,9 +99,12 @@ module infinite_deck::game {
         owner: address,
         name: String,
         element: u8,
+        element_name: String,
+        rarity: u8,
         hp: u64,
         atk: u64,
         def: u64,
+        power_score: u64,
     }
 
     public struct BattleCreated has copy, drop {
@@ -141,6 +150,14 @@ module infinite_deck::game {
         rounds_played: u64,
     }
 
+    public struct InitiativeRolled has copy, drop {
+        battle_id: ID,
+        attacker: address,
+        defender: address,
+        attacker_is_player1: bool,
+        round: u64,
+    }
+
     // ==================== Card Management ====================
 
     /// Mint a new card with specified stats
@@ -148,9 +165,12 @@ module infinite_deck::game {
     public fun mint_card(
         name: String,
         element: u8,
+        element_name: String,
+        rarity: u8,
         hp: u64,
         atk: u64,
         def: u64,
+        power_score: u64,
         image_url: String,
         ctx: &mut TxContext
     ): Card {
@@ -172,34 +192,47 @@ module infinite_deck::game {
             owner,
             name,
             element,
+            element_name,
+            rarity,
             hp,
             atk,
             def,
+            power_score,
         });
 
         Card {
             id: card_uid,
             name,
             element,
+            element_name,
+            rarity,
             hp,
             max_hp: hp,
             atk,
             def,
+            power_score,
             image_url,
             owner,
             in_battle: false,
+            locked_in_lobby: false,
         }
     }
 
     /// Transfer card to another address
     public fun transfer_card(card: Card, recipient: address) {
         assert!(!card.in_battle, ECardInBattle);
+        assert!(!card.locked_in_lobby, ECardLockedInLobby);
         transfer::public_transfer(card, recipient);
     }
 
     /// Get card information (read-only)
-    public fun get_card_info(card: &Card): (String, u8, u64, u64, u64, u64, address) {
-        (card.name, card.element, card.hp, card.max_hp, card.atk, card.def, card.owner)
+    public fun get_card_info(card: &Card): (String, u8, String, u8, u64, u64, u64, u64, u64, address) {
+        (card.name, card.element, card.element_name, card.rarity, card.hp, card.max_hp, card.atk, card.def, card.power_score, card.owner)
+    }
+
+    /// Get card display info
+    public fun get_card_display(card: &Card): (String, String, String) {
+        (card.name, card.element_name, card.image_url)
     }
 
     // ==================== Battle Initialization ====================
@@ -255,6 +288,12 @@ module infinite_deck::game {
         };
 
         (battle, cap1, cap2)
+    }
+
+    /// Share a battle object (must be called from the game module)
+    /// This allows other modules to create and share battles
+    public fun share_battle(battle: Battle) {
+        transfer::share_object(battle);
     }
 
     // ==================== Battle Phases ====================
@@ -318,13 +357,42 @@ module infinite_deck::game {
         battle.current_phase = PHASE_COMBAT;
     }
 
-    /// Phase 3: Execute combat with initiative roll
+    /// Phase 3a: Roll initiative to determine who attacks first
+    /// Frontend should call this first to know the attacker
+    /// Returns true if player1 attacks first, false if player2 attacks first
+    public fun roll_initiative(
+        battle: &Battle,
+        r: &Random,
+        ctx: &mut TxContext
+    ): bool {
+        // Can only roll initiative in REVEAL or COMBAT phase
+        assert!(battle.current_phase == PHASE_REVEAL || battle.current_phase == PHASE_COMBAT, EInvalidBattlePhase);
+        assert!(battle.winner.is_none(), EBattleAlreadyEnded);
+
+        let mut generator = random::new_generator(r, ctx);
+        let initiative = random::generate_u8_in_range(&mut generator, 0, 1);
+        
+        let attacker_is_player1 = initiative == 0;
+        
+        // Emit event for frontend
+        event::emit(InitiativeRolled {
+            battle_id: object::uid_to_inner(&battle.id),
+            attacker: if (attacker_is_player1) { battle.player1 } else { battle.player2 },
+            defender: if (attacker_is_player1) { battle.player2 } else { battle.player1 },
+            attacker_is_player1,
+            round: battle.round_number,
+        });
+        
+        attacker_is_player1 // true = player1 attacks first, false = player2 attacks first
+    }
+
+    /// Phase 3b: Execute combat with predetermined attacker
+    /// Frontend calls roll_initiative() first, then calls this with the result
     public fun execute_combat(
         battle: &mut Battle,
         card1: &mut Card,
         card2: &mut Card,
-        r: &Random,
-        ctx: &mut TxContext
+        attacker_is_player1: bool,
     ) {
         // Auto-reveal if needed
         if (battle.current_phase == PHASE_REVEAL) {
@@ -341,12 +409,9 @@ module infinite_deck::game {
         assert!(battle.player1_active_card.is_some() && *battle.player1_active_card.borrow() == card1_id, EInvalidBattlePhase);
         assert!(battle.player2_active_card.is_some() && *battle.player2_active_card.borrow() == card2_id, EInvalidBattlePhase);
 
-        // Roll initiative (50/50 random)
-        let mut generator = random::new_generator(r, ctx);
-        let initiative = random::generate_u8_in_range(&mut generator, 0, 1);
-        
+        // Determine attacker/defender based on initiative result
         let (attacker, defender, attacker_card, defender_card, attacker_addr, defender_addr) = 
-            if (initiative == 0) {
+            if (attacker_is_player1) {
                 (card1, card2, card1_id, card2_id, battle.player1, battle.player2)
             } else {
                 (card2, card1, card2_id, card1_id, battle.player2, battle.player1)
@@ -468,6 +533,35 @@ module infinite_deck::game {
         battle.current_phase = PHASE_SUMMON;
     }
 
+    /// Resolve round and update player profiles (optional)
+    /// Use this version when you want to track battle results in player profiles
+    public fun resolve_round_with_profiles(
+        battle: &mut Battle,
+        card1: &mut Card,
+        card2: &mut Card,
+        profile1: &mut player_profile::PlayerProfile,
+        profile2: &mut player_profile::PlayerProfile,
+    ) {
+        use infinite_deck::player_profile;
+        
+        // First resolve the round normally
+        resolve_round(battle, card1, card2);
+        
+        // If battle ended, update profiles
+        if (battle.winner.is_some()) {
+            let battle_id = object::uid_to_inner(&battle.id);
+            let winner = *battle.winner.borrow();
+            
+            if (winner == battle.player1) {
+                player_profile::record_win(profile1, battle_id);
+                player_profile::record_loss(profile2, battle_id);
+            } else {
+                player_profile::record_win(profile2, battle_id);
+                player_profile::record_loss(profile1, battle_id);
+            };
+        };
+    }
+
     // ==================== Helper Functions ====================
 
     /// Calculate damage based on ATK, DEF, and elemental multipliers
@@ -561,6 +655,47 @@ module infinite_deck::game {
         }
     }
 
+    // ==================== Helper Functions ====================
+
+    /// Convert element string to u8 for battle logic
+    public fun element_string_to_u8(element: String): u8 {
+        if (element == string::utf8(b"Fire")) { ELEMENT_FIRE }
+        else if (element == string::utf8(b"Water")) { ELEMENT_WATER }
+        else if (element == string::utf8(b"Plant")) { ELEMENT_PLANT }
+        else if (element == string::utf8(b"Light")) { ELEMENT_LIGHT }
+        else if (element == string::utf8(b"Dark")) { ELEMENT_DARK }
+        else { ELEMENT_FIRE } // Default to Fire
+    }
+
+    /// Convert u8 to element string for display
+    public fun element_u8_to_string(element: u8): String {
+        if (element == ELEMENT_FIRE) { string::utf8(b"Fire") }
+        else if (element == ELEMENT_WATER) { string::utf8(b"Water") }
+        else if (element == ELEMENT_PLANT) { string::utf8(b"Plant") }
+        else if (element == ELEMENT_LIGHT) { string::utf8(b"Light") }
+        else if (element == ELEMENT_DARK) { string::utf8(b"Dark") }
+        else { string::utf8(b"Fire") }
+    }
+
+    /// Get border color based on rarity
+    public fun get_border_color(rarity: u8): String {
+        if (rarity == 0) { string::utf8(b"green") }      // Common
+        else if (rarity == 1) { string::utf8(b"blue") }  // Uncommon
+        else if (rarity == 2) { string::utf8(b"purple") } // Epic
+        else { string::utf8(b"gold") }                    // Legendary
+    }
+
+    /// Lock card for matchmaking (used by matchmaking module)
+    public fun lock_card_for_matchmaking(card: &mut Card) {
+        assert!(!card.in_battle, ECardInBattle);
+        card.locked_in_lobby = true;
+    }
+
+    /// Unlock card from matchmaking (used by matchmaking module)
+    public fun unlock_card_from_matchmaking(card: &mut Card) {
+        card.locked_in_lobby = false;
+    }
+
     // ==================== Test Helpers ====================
 
     #[test_only]
@@ -572,12 +707,39 @@ module infinite_deck::game {
         def: u64,
         ctx: &mut TxContext
     ): Card {
-        mint_card(name, element, hp, atk, def, string::utf8(b"test.png"), ctx)
+        let element_name = element_u8_to_string(element);
+        mint_card(
+            name, 
+            element, 
+            element_name,
+            0, // rarity
+            hp, 
+            atk, 
+            def, 
+            hp + atk + def, // power_score
+            string::utf8(b"test.png"),
+            ctx
+        )
     }
 
     #[test_only]
     public fun destroy_card_for_testing(card: Card) {
-        let Card { id, name: _, element: _, hp: _, max_hp: _, atk: _, def: _, image_url: _, owner: _, in_battle: _ } = card;
+        let Card { 
+            id, 
+            name: _, 
+            element: _, 
+            element_name: _,
+            rarity: _,
+            hp: _, 
+            max_hp: _, 
+            atk: _, 
+            def: _, 
+            power_score: _,
+            image_url: _, 
+            owner: _, 
+            in_battle: _,
+            locked_in_lobby: _,
+        } = card;
         object::delete(id);
     }
 

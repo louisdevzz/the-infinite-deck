@@ -1,165 +1,460 @@
-# The Infinite Deck - Move Smart Contract
+# The Infinite Deck - Move Smart Contracts
 
-A production-ready Sui Move smart contract for a tactical 1vs1 card battle game with elemental counters and turn-based combat.
+A decentralized card battle game built on Sui blockchain with quadratic random distribution, auto-matchmaking, and integrated player profiles.
 
-## Features
+## 📋 Table of Contents
 
-- ✅ **Card NFTs** with mutable battle stats (HP, ATK, DEF)
-- ✅ **5-Card Deck System** with graveyard management
-- ✅ **Elemental Counter System** (Fire > Plant > Water > Fire; Light ↔ Dark)
-- ✅ **Turn-Based Combat** with simultaneous card selection
-- ✅ **Random Initiative** using Sui VRF
-- ✅ **Damage Formula**: `(ATK × Multiplier) - DEF`
-- ✅ **Win Condition**: Destroy all 5 opponent cards
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Account Setup](#account-setup)
+- [Building](#building)
+- [Testing](#testing)
+- [Deployment](#deployment)
+- [Post-Deployment Setup](#post-deployment-setup)
+- [Module Overview](#module-overview)
+- [CLI Reference](#cli-reference)
 
-## Game Flow
+---
 
-### Battle Phases
+## 🔧 Prerequisites
 
-1. **Setup** - Players join with 5 cards each
-2. **Summon** - Both players select a card face-down (blind)
-3. **Reveal** - Cards are revealed simultaneously
-4. **Combat** - Random initiative, attack + counter-attack
-5. **Resolution** - Handle deaths, check win condition, next round
+- **Sui CLI** (v1.53.2 or later)
+- **Git**
+- **Rust** (for building from source)
 
-### Elemental Multipliers
-
-| Attacker | Defender | Multiplier |
-| -------- | -------- | ---------- |
-| 🔥 Fire  | 🌳 Plant | **1.5x**   |
-| 💧 Water | 🔥 Fire  | **1.5x**   |
-| 🌳 Plant | 💧 Water | **1.5x**   |
-| ☀️ Light | 🌑 Dark  | **2.0x**   |
-| 🌑 Dark  | ☀️ Light | **2.0x**   |
-| 🔥 Fire  | 💧 Water | **0.5x**   |
-| 🌳 Plant | 🔥 Fire  | **0.5x**   |
-| 💧 Water | 🌳 Plant | **0.5x**   |
-
-## Building & Testing
+### Install Sui CLI
 
 ```bash
-# Build the package
+# Install via Homebrew (macOS)
+brew install sui
+
+# Or install from source
+cargo install --locked --git https://github.com/MystenLabs/sui.git --branch testnet sui
+```
+
+Verify installation:
+
+```bash
+sui --version
+# Should output: sui 1.53.2 or later
+```
+
+---
+
+## 🚀 Installation
+
+Clone the repository:
+
+```bash
+git clone <your-repo-url>
+cd the-infinite-deck/move/the-infinite-deck
+```
+
+---
+
+## 👤 Account Setup
+
+### 1. Create a New Wallet
+
+```bash
+# Generate a new keypair
+sui client new-address ed25519
+
+# This will output:
+# Created new keypair and saved it to keystore.
+# - address: 0xYOUR_ADDRESS
+# - alias: YOUR_ALIAS
+```
+
+### 2. Switch to Testnet
+
+```bash
+# Add testnet environment
+sui client new-env --alias testnet --rpc https://fullnode.testnet.sui.io:443
+
+# Switch to testnet
+sui client switch --env testnet
+
+# Verify current environment
+sui client active-env
+# Should output: testnet
+```
+
+### 3. Get Testnet SUI Tokens
+
+**Option A: Discord Faucet**
+
+1. Join [Sui Discord](https://discord.gg/sui)
+2. Go to `#testnet-faucet` channel
+3. Type: `!faucet YOUR_ADDRESS`
+
+**Option B: Web Faucet**
+
+```bash
+# Request tokens via CLI
+curl --location --request POST 'https://faucet.testnet.sui.io/gas' \
+--header 'Content-Type: application/json' \
+--data-raw '{
+    "FixedAmountRequest": {
+        "recipient": "YOUR_ADDRESS"
+    }
+}'
+```
+
+**Option C: Sui CLI**
+
+```bash
+sui client faucet
+```
+
+### 4. Verify Balance
+
+```bash
+sui client gas
+
+# Output:
+# ╭────────────────────────────────────────────────────────────────────┬────────────╮
+# │ gasCoinId                                                          │ gasBalance │
+# ├────────────────────────────────────────────────────────────────────┼────────────┤
+# │ 0x...                                                              │ 1000000000 │
+# ╰────────────────────────────────────────────────────────────────────┴────────────╯
+```
+
+---
+
+## 🔨 Building
+
+### Build the Package
+
+```bash
 sui move build
+```
 
-# Run tests
+Expected output:
+
+```
+UPDATING GIT DEPENDENCY https://github.com/MystenLabs/sui.git
+INCLUDING DEPENDENCY Sui
+INCLUDING DEPENDENCY MoveStdlib
+BUILDING infinite_deck
+```
+
+### Check for Errors
+
+If you see errors, check:
+
+- Sui CLI version: `sui --version`
+- Move.toml configuration
+- Module dependencies
+
+---
+
+## 🧪 Testing
+
+Run all tests:
+
+```bash
 sui move test
+```
 
-# Publish to testnet
+Run specific test:
+
+```bash
+sui move test test_name
+```
+
+Run with verbose output:
+
+```bash
+sui move test --verbose
+```
+
+---
+
+## 🚀 Deployment
+
+### 1. Deploy to Testnet
+
+```bash
 sui client publish --gas-budget 100000000
 ```
 
-## Usage Examples
+**Important:** Save the output! You'll need:
 
-### Minting a Card
+- **Package ID**: `0x...` (the published package address)
+- **Lobby Object ID**: Shared object created in `matchmaking::init`
+- **Transaction Digest**: For verification
 
-```move
-use infinite_deck::game;
+Example output:
 
-public fun mint_my_card(ctx: &mut TxContext) {
-    let card = game::mint_card(
-        string::utf8(b"Fire Dragon"),
-        0, // ELEMENT_FIRE
-        5000, // HP
-        3000, // ATK
-        2000, // DEF
-        string::utf8(b"https://example.com/fire-dragon.png"),
-        ctx
-    );
-
-    transfer::public_transfer(card, ctx.sender());
-}
+```
+Transaction Digest: ABC123...
+╭─────────────────────────────────────────────────────────────────────╮
+│ Object Changes                                                      │
+├─────────────────────────────────────────────────────────────────────┤
+│ Created Objects:                                                    │
+│  ┌──                                                                │
+│  │ ObjectID: 0xLOBBY_ID                                            │
+│  │ Sender: 0xYOUR_ADDRESS                                          │
+│  │ Owner: Shared                                                    │
+│  │ ObjectType: 0xPACKAGE_ID::matchmaking::Lobby                   │
+│  └──                                                                │
+│ Published Objects:                                                  │
+│  ┌──                                                                │
+│  │ PackageID: 0xPACKAGE_ID                                         │
+│  │ Version: 1                                                       │
+│  │ Digest: ...                                                      │
+│  └──                                                                │
+╰─────────────────────────────────────────────────────────────────────╯
 ```
 
-### Creating a Battle
+### 2. Save Important IDs
 
-```move
-use infinite_deck::game;
+Create a `.env` file or note these down:
 
-public fun start_battle(
-    player1_cards: vector<ID>, // Must be exactly 5 cards
-    player2: address,
-    player2_cards: vector<ID>, // Must be exactly 5 cards
-    ctx: &mut TxContext
-) {
-    let (battle, cap1, cap2) = game::create_battle(
-        player1_cards,
-        player2,
-        player2_cards,
-        ctx
-    );
-
-    // Share battle object
-    transfer::share_object(battle);
-
-    // Give capabilities to players
-    transfer::public_transfer(cap1, ctx.sender());
-    transfer::public_transfer(cap2, player2);
-}
+```bash
+export PACKAGE_ID="0x..."
+export LOBBY_ID="0x..."
+export RANDOM_ID="0x6"  # Sui Random object (fixed on testnet)
 ```
 
-### Playing a Round
+### 3. Verify Deployment
 
-```move
-// Phase 1: Both players summon cards
-game::summon_card(&mut battle, &cap, card_id, ctx);
+```bash
+# View package
+sui client object $PACKAGE_ID
 
-// Phase 2: Reveal happens automatically when both summon
-
-// Phase 3: Execute combat (requires Random object)
-game::execute_combat(&mut battle, &mut card1, &mut card2, &random, ctx);
-
-// Phase 4: Resolve round
-game::resolve_round(&mut battle, &mut card1, &mut card2);
+# View lobby object
+sui client object $LOBBY_ID
 ```
 
-## Events
+---
 
-The contract emits events for all major actions:
+## ⚙️ Post-Deployment Setup
 
-- `CardMinted` - New card created
-- `BattleCreated` - Battle initialized
-- `CardSummoned` - Player selects a card
-- `CardsRevealed` - Both cards revealed
-- `CombatResolved` - Damage dealt
-- `CardDestroyed` - Card sent to graveyard
-- `BattleEnded` - Winner declared
+### 1. Create Your Player Profile
 
-## Error Codes
+```bash
+sui client call \
+  --package $PACKAGE_ID \
+  --module player_profile \
+  --function create_profile_entry \
+  --args "YourUsername" \
+  --gas-budget 10000000
+```
 
-| Code | Error                  | Description                         |
-| ---- | ---------------------- | ----------------------------------- |
-| 1    | `EInvalidStats`        | HP must be > 0                      |
-| 2    | `EStatsExceedCap`      | Stats must be ≤ 10,000              |
-| 3    | `EInvalidDeckSize`     | Must have exactly 5 cards           |
-| 4    | `ENotCardOwner`        | Only owner can transfer             |
-| 5    | `ECardInBattle`        | Cannot transfer during battle       |
-| 6    | `EInvalidBattlePhase`  | Action not allowed in current phase |
-| 7    | `ENotPlayerInBattle`   | Only battle participants can act    |
-| 8    | `ECardAlreadySummoned` | Cannot summon twice in same round   |
-| 9    | `EBattleAlreadyEnded`  | Cannot act after battle ends        |
-| 10   | `ECardNotInDeck`       | Must summon from your deck          |
-| 11   | `EInvalidElement`      | Element must be 0-4                 |
+Save the **Profile Object ID** from the output.
 
-## Architecture
+### 2. Mint Your First Card
 
-### Structs
+```bash
+sui client call \
+  --package $PACKAGE_ID \
+  --module ai_forge \
+  --function forge_card_entry \
+  --args "Dragon" "Fire" "https://example.com/image.png" "0x6" \
+  --gas-budget 10000000
+```
 
-- `Card` - NFT with mutable battle stats
-- `Battle` - Shared object tracking game state
-- `BattleCapability` - Permission to act in a battle
+### 3. Select Battle Deck
 
-### Key Functions
+After minting 5 cards, select them for battle:
 
-- `mint_card()` - Create new card NFT
-- `create_battle()` - Initialize 1vs1 battle
-- `summon_card()` - Select card face-down
-- `execute_combat()` - Calculate damage and resolve attacks
-- `resolve_round()` - Handle deaths and win conditions
+```bash
+sui client call \
+  --package $PACKAGE_ID \
+  --module player_profile \
+  --function select_battle_deck_entry \
+  --args $PROFILE_ID $CARD1_ID $CARD2_ID $CARD3_ID $CARD4_ID $CARD5_ID \
+  --gas-budget 10000000
+```
 
-## License
+### 4. Join Matchmaking
+
+```bash
+sui client call \
+  --package $PACKAGE_ID \
+  --module matchmaking \
+  --function join_lobby \
+  --args $LOBBY_ID $PROFILE_ID $CARD1_ID $CARD2_ID $CARD3_ID $CARD4_ID $CARD5_ID "0x6" \
+  --gas-budget 10000000
+```
+
+---
+
+## 📦 Module Overview
+
+| Module                  | Description                                |
+| ----------------------- | ------------------------------------------ |
+| `infinite-deck.move`    | Core battle system with elemental counters |
+| `quadratic_random.move` | Quadratic distribution for power scores    |
+| `ai_forge.move`         | Card minting with random stats             |
+| `player_profile.move`   | Player stats + integrated deck management  |
+| `matchmaking.move`      | Auto-matching lobby system                 |
+
+---
+
+## 📚 CLI Reference
+
+### Common Commands
+
+```bash
+# View active address
+sui client active-address
+
+# List all addresses
+sui client addresses
+
+# Switch address
+sui client switch --address ALIAS_OR_ADDRESS
+
+# View objects owned by address
+sui client objects
+
+# View specific object
+sui client object OBJECT_ID
+
+# View transaction
+sui client transaction DIGEST
+
+# Call a function
+sui client call \
+  --package PACKAGE_ID \
+  --module MODULE_NAME \
+  --function FUNCTION_NAME \
+  --args ARG1 ARG2 ... \
+  --gas-budget AMOUNT
+```
+
+### Object Types
+
+```bash
+# View all objects of a specific type
+sui client objects --filter "0xPACKAGE_ID::MODULE::STRUCT"
+
+# Example: View all your cards
+sui client objects --filter "0xPACKAGE_ID::game::Card"
+```
+
+### Gas Management
+
+```bash
+# View gas objects
+sui client gas
+
+# Merge gas coins
+sui client merge-coin \
+  --primary-coin COIN_ID \
+  --coin-to-merge COIN_ID \
+  --gas-budget 1000000
+
+# Split gas coin
+sui client split-coin \
+  --coin-id COIN_ID \
+  --amounts 1000000000 \
+  --gas-budget 1000000
+```
+
+---
+
+## 🔍 Debugging
+
+### View Package Source
+
+```bash
+sui client verify-source --package-path . --network testnet
+```
+
+### View Events
+
+```bash
+# View events from a transaction
+sui client events --tx-digest DIGEST
+
+# Example: View match found events
+sui client events --type "0xPACKAGE_ID::matchmaking::MatchFound"
+```
+
+### Dry Run Transaction
+
+```bash
+sui client call \
+  --package $PACKAGE_ID \
+  --module MODULE \
+  --function FUNCTION \
+  --args ... \
+  --gas-budget 10000000 \
+  --dry-run
+```
+
+---
+
+## 🌐 Network Endpoints
+
+### Testnet
+
+- **RPC**: `https://fullnode.testnet.sui.io:443`
+- **Faucet**: `https://faucet.testnet.sui.io/gas`
+- **Explorer**: `https://suiscan.xyz/testnet`
+
+### Mainnet
+
+- **RPC**: `https://fullnode.mainnet.sui.io:443`
+- **Explorer**: `https://suiscan.xyz/mainnet`
+
+---
+
+## 📖 Additional Resources
+
+- [Sui Documentation](https://docs.sui.io/)
+- [Sui CLI Reference](https://docs.sui.io/references/cli/client)
+- [Move Language Book](https://move-language.github.io/move/)
+- [Sui Examples](https://github.com/MystenLabs/sui/tree/main/examples)
+
+---
+
+## 🐛 Troubleshooting
+
+### "Insufficient gas"
+
+```bash
+# Request more testnet tokens
+sui client faucet
+```
+
+### "Package not found"
+
+```bash
+# Verify package ID
+sui client object $PACKAGE_ID
+```
+
+### "Object not found"
+
+```bash
+# Check if you own the object
+sui client objects | grep OBJECT_ID
+```
+
+### "Invalid transaction"
+
+```bash
+# Use dry-run to see error details
+sui client call ... --dry-run
+```
+
+---
+
+## 📝 License
 
 Apache-2.0
 
-## Contributing
+---
 
-See the main project [README](../../README.md) for contribution guidelines.
+## 🤝 Contributing
+
+Contributions welcome! Please open an issue or PR.
+
+---
+
+**Built with ❤️ on Sui**
