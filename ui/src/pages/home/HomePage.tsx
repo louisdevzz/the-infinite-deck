@@ -16,7 +16,7 @@ export const HomePage: React.FC = () => {
                 </h1>
                 <div className="flex items-center gap-4 text-primary/40 font-mono text-[10px] tracking-[0.3em] mt-2 opacity-0 animate-[fadeInUp_1s_ease-out_0.5s_forwards]">
                     <span className="w-12 h-px bg-gradient-to-r from-transparent to-primary/30"></span>
-                    <span>NEURAL_LINK ESTABLISHED</span>
+
                     <span className="w-12 h-px bg-gradient-to-l from-transparent to-primary/30"></span>
                 </div>
             </div>
@@ -28,7 +28,7 @@ export const HomePage: React.FC = () => {
             </div>
 
             {/* Central Workspace */}
-            <main className="flex-1 grid grid-cols-12 gap-2 md:gap-8 items-center overflow-hidden relative z-10">
+            <main className="flex-1 grid grid-cols-12 gap-2 md:gap-8 items-center overflow-y-auto lg:overflow-hidden relative z-10 scrollbar-hide">
                 <Sidebar />
                 <ConstructionPedestal />
                 <RightHUD />

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 export const BackButton: React.FC = () => {
     return (
-        <div className="absolute top-4 left-4 md:top-6 md:left-6 z-50">
+        <div className="absolute top-4 left-4 md:top-6 md:left-6 z-50 bottom-20">
             <Link
                 to="/"
                 className="group flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-black/40 border border-white/10 rounded-sm hover:border-primary/50 hover:bg-primary/5 transition-all backdrop-blur-sm"

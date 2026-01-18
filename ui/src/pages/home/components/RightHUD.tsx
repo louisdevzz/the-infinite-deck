@@ -2,7 +2,7 @@ import React from 'react';
 
 export const RightHUD: React.FC = () => {
     return (
-        <aside className="col-span-3 h-full flex flex-col justify-center gap-4 md:gap-6 tilt-right origin-right scale-[0.7] md:scale-100 transition-transform">
+        <aside className="col-span-12 lg:col-span-3 h-auto lg:h-full flex flex-col justify-start lg:justify-center gap-4 lg:gap-6 lg:tilt-right origin-right transition-transform order-3 lg:order-3">
             {/* System Status Panel */}
             <div className="glass-panel p-6 rounded-xl relative overflow-hidden border border-white/5 group hover:border-primary/30 transition-colors">
                 {/* Corner markers */}

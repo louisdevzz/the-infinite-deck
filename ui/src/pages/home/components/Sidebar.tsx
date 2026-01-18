@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 export const Sidebar: React.FC = () => {
     return (
-        <aside className="col-span-3 h-full flex flex-col justify-center gap-4 md:gap-6 tilt-left origin-left scale-[0.7] md:scale-100 transition-transform">
+        <aside className="col-span-12 lg:col-span-3 h-auto lg:h-full flex flex-col justify-end lg:justify-center gap-4 lg:gap-6 lg:tilt-left origin-left transition-transform order-2 lg:order-1">
             <div className="glass-panel p-2 rounded-xl flex flex-col gap-2 overflow-hidden relative border border-white/5">
                 {/* Decorative Side Bar */}
                 <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-primary/50 via-primary to-primary/50 glow-teal"></div>

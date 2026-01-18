@@ -127,17 +127,16 @@ export const MarketPage: React.FC = () => {
     };
 
     return (
-        <div className="bg-background-dark font-display text-white selection:bg-primary/30 min-h-screen flex flex-col relative">
+        <div className="bg-background-dark font-display text-white selection:bg-primary/30 min-h-screen flex flex-col relative ">
             {showSuccessModal && successCard && (
                 <TransactionSuccessModal
                     card={successCard}
                     onClose={handleCloseSuccessModal}
                 />
             )}
-
             <BackButton />
 
-            <main className="flex-1 flex flex-col px-6 lg:px-12 py-6 max-w-[1600px] mx-auto w-full">
+            <main className="flex-1 flex flex-col px-6 lg:px-12 py-6 max-w-[1600px] mx-auto w-full mt-15">
                 <MarketStatsBar
                     activeView={activeView}
                     filterElement={filterElement}

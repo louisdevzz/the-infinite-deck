@@ -90,7 +90,7 @@ export const InventoryPage: React.FC = () => {
             <BackButton />
             <main className="flex-1 flex overflow-hidden">
                 <PageTransition>
-                    <div className="flex w-full h-full">
+                    <div className="flex w-full h-full mt-10 pb-15">
                         <CardDetailPanel
                             selectedCard={selectedCardData}
                             isEquipped={isEquipped}

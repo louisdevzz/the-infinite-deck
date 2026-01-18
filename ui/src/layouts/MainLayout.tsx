@@ -16,7 +16,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             </div>
 
             {/* Main Layout Container */}
-            <div className="relative flex h-screen w-full flex-col overflow-hidden p-6 perspective-container">
+            <div className="relative flex h-screen w-full flex-col overflow-y-auto lg:overflow-hidden p-6 perspective-container">
                 {children}
             </div>
 
