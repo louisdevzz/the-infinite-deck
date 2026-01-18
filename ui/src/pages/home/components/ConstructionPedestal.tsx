@@ -11,7 +11,7 @@ export const ConstructionPedestal: React.FC = () => {
     };
 
     return (
-        <section className="col-span-6 relative flex flex-col items-center justify-center -mt-8 md:-mt-12 perspective-container scale-[0.6] md:scale-90 lg:scale-100 origin-center transition-transform duration-500">
+        <section className="col-span-6 relative flex flex-col items-center justify-center perspective-container scale-[0.6] md:scale-90 lg:scale-100 origin-center transition-transform duration-500">
             {/* Background Circle */}
             <div className={`absolute w-[50vh] h-[50vh] md:w-[600px] md:h-[600px] rounded-full border border-primary/10 pointer-events-none transition-all duration-1000 ${isBoosting ? 'animate-[spin_10s_linear_infinite] border-primary/30 shadow-[0_0_50px_rgba(0,229,255,0.2)]' : 'animate-[spin_60s_linear_infinite]'}`}></div>
             <div className={`absolute w-[40vh] h-[40vh] md:w-[450px] md:h-[450px] rounded-full border-2 border-dashed border-primary/20 pointer-events-none transition-all duration-1000 ${isBoosting ? 'animate-[spin_5s_linear_infinite_reverse] border-primary/50' : 'animate-[spin_40s_linear_infinite_reverse]'}`}></div>

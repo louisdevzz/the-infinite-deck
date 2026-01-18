@@ -11,7 +11,7 @@ export const Header: React.FC = () => {
             <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <span className="material-symbols-outlined text-2xl text-primary">security</span>
                 <div className="flex items-baseline gap-2">
-                    <span className="text-white text-xs md:text-sm font-black uppercase tracking-widest">CYPHER TCG</span>
+                    <span className="text-white text-xs md:text-sm font-black uppercase tracking-widest">THE INFINITE DECK</span>
                     <span className="hidden lg:block text-[10px] text-primary/60 font-mono tracking-widest border-l border-white/20 pl-2">PROTOCOL: CYAN_BRIDGE_V2.0</span>
                 </div>
             </Link>
