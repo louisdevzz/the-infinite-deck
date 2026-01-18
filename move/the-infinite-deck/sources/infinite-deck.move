@@ -562,6 +562,54 @@ module infinite_deck::game {
         };
     }
 
+    /// Surrender the battle
+    public fun surrender(
+        battle: &mut Battle,
+        cap: &BattleCapability,
+        ctx: &TxContext
+    ) {
+        let player = ctx.sender();
+        assert!(cap.player == player, ENotPlayerInBattle);
+        assert!(object::id_to_address(&cap.battle_id) == object::id_to_address(&object::uid_to_inner(&battle.id)), ENotPlayerInBattle);
+        assert!(battle.winner.is_none(), EBattleAlreadyEnded);
+
+        let winner = if (player == battle.player1) {
+            battle.player2
+        } else {
+            battle.player1
+        };
+
+        battle.winner = option::some(winner);
+        
+        event::emit(BattleEnded {
+            battle_id: object::uid_to_inner(&battle.id),
+            winner,
+            rounds_played: battle.round_number,
+        });
+    }
+
+    /// Surrender and update player profiles
+    public entry fun surrender_with_profiles(
+        battle: &mut Battle,
+        cap: &BattleCapability,
+        profile1: &mut player_profile::PlayerProfile,
+        profile2: &mut player_profile::PlayerProfile,
+        ctx: &TxContext
+    ) {
+        surrender(battle, cap, ctx);
+
+        let battle_id = object::uid_to_inner(&battle.id);
+        let winner = *battle.winner.borrow();
+        
+        if (winner == battle.player1) {
+            player_profile::record_win(profile1, battle_id);
+            player_profile::record_loss(profile2, battle_id);
+        } else {
+            player_profile::record_win(profile2, battle_id);
+            player_profile::record_loss(profile1, battle_id);
+        };
+    }
+
     // ==================== Helper Functions ====================
 
     /// Calculate damage based on ATK, DEF, and elemental multipliers

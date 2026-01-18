@@ -23,6 +23,10 @@ export function useGame(profileId: string | null, deck: string[]) {
   const [gameState, setGameState] = useState<GameState>("IDLE");
   const [lobbyId, setLobbyId] = useState<string | null>(null);
   const [battleId, setBattleId] = useState<string | null>(null);
+  const [gameOver, setGameOver] = useState<{
+    winner: string;
+    isWinner: boolean;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch Lobby ID
@@ -227,6 +231,47 @@ export function useGame(profileId: string | null, deck: string[]) {
     };
   }, [gameState, account, client]);
 
+  // Listen for BattleEnded
+  useEffect(() => {
+    if (!battleId) return;
+
+    const unsubscribe = client.subscribeEvent({
+      filter: { MoveEventType: `${PACKAGE_ID}::game::BattleEnded` },
+      onMessage: (event) => {
+        const parsed = event.parsedJson as any;
+        if (parsed.battle_id === battleId) {
+          setGameState("ENDED");
+          setGameOver({
+            winner: parsed.winner,
+            isWinner: parsed.winner === account?.address,
+          });
+        }
+      },
+    });
+
+    return () => {
+      unsubscribe.then((unsub) => unsub());
+    };
+  }, [battleId, client, account]);
+
+  const surrender = async () => {
+    if (!battleId || !account) return;
+
+    const capId = await fetchBattleCap(account.address);
+    if (!capId) {
+      setError("Battle Capability not found");
+      return;
+    }
+
+    const tx = new Transaction();
+    tx.moveCall({
+      target: `${PACKAGE_ID}::game::surrender`,
+      arguments: [tx.object(battleId), tx.object(capId)],
+    });
+
+    await signAndExecute({ transaction: tx });
+  };
+
   return {
     gameState,
     battleId,
@@ -235,6 +280,8 @@ export function useGame(profileId: string | null, deck: string[]) {
     summonCard,
     rollInitiative,
     executeCombat,
+    surrender,
+    gameOver,
     error,
   };
 }

@@ -12,6 +12,14 @@ interface ActiveDeckProps {
   selectedCardId: string | null;
   onCardSelect: (id: string, source: "deck" | "backpack") => void;
   onClearDeck: () => void;
+  onSaveDeck: () => void;
+  onSyncCollection: () => void;
+  stats: {
+    wins: number;
+    losses: number;
+    totalCards: number;
+    suiBalance: string;
+  };
 }
 
 export const ActiveDeck: React.FC<ActiveDeckProps> = ({
@@ -20,6 +28,9 @@ export const ActiveDeck: React.FC<ActiveDeckProps> = ({
   selectedCardId,
   onCardSelect,
   onClearDeck,
+  onSaveDeck,
+  onSyncCollection,
+  stats,
 }) => {
   return (
     <section className="flex-1 bg-background-dark/30 flex flex-col p-8 overflow-hidden">
@@ -39,12 +50,22 @@ export const ActiveDeck: React.FC<ActiveDeckProps> = ({
         </div>
         <div className="flex gap-3">
           <button
+            onClick={onSyncCollection}
+            className="px-4 py-2 bg-zinc-800 text-primary border border-primary/30 text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-700 transition-all flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined text-[14px]">sync</span>
+            SYNC
+          </button>
+          <button
             onClick={onClearDeck}
-            className="px-6 py-2 bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+            className="px-4 py-2 bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
           >
             Clear All
           </button>
-          <button className="px-6 py-2 bg-primary text-matrix-black text-[10px] font-black uppercase tracking-widest cyan-glow">
+          <button
+            onClick={onSaveDeck}
+            className="px-6 py-2 bg-primary text-matrix-black text-[10px] font-black uppercase tracking-widest cyan-glow hover:bg-primary-light transition-all"
+          >
             Save Deck
           </button>
         </div>
@@ -148,23 +169,27 @@ export const ActiveDeck: React.FC<ActiveDeckProps> = ({
         <div className="flex justify-center gap-16 pt-12 border-t border-white/5 max-w-4xl mx-auto w-full">
           <div className="text-center">
             <p className="text-[10px] text-white/40 font-bold uppercase mb-2 tracking-widest">
-              Resource Pool
+              Battle Record
             </p>
             <p className="text-2xl font-black text-primary text-cyan-glow">
-              12 / 20
+              {stats.wins}W - {stats.losses}L
             </p>
           </div>
           <div className="text-center">
             <p className="text-[10px] text-white/40 font-bold uppercase mb-2 tracking-widest">
-              ROM Load
+              Collection Size
             </p>
-            <p className="text-2xl font-black text-secondary">24 Nodes</p>
+            <p className="text-2xl font-black text-secondary">
+              {stats.totalCards} Nodes
+            </p>
           </div>
           <div className="text-center">
             <p className="text-[10px] text-white/40 font-bold uppercase mb-2 tracking-widest">
               Sui Balance
             </p>
-            <p className="text-2xl font-black text-white">4.82 SUI</p>
+            <p className="text-2xl font-black text-white">
+              {stats.suiBalance} SUI
+            </p>
           </div>
         </div>
       </div>

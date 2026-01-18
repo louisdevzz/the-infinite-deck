@@ -8,13 +8,15 @@ import { useGame } from "../../hooks/useGame";
 import { useCards } from "../../hooks/useCards";
 import { useCurrentAccount } from "@mysten/dapp-kit";
 
+import { GameOverScreen } from "../../components/duel/GameOverScreen";
+import { Link } from "react-router-dom";
+
 export const DuelPage: React.FC = () => {
   const account = useCurrentAccount();
   const { profile, loading, hasProfile, createProfile } = usePlayerProfile();
 
   // Default to first 5 cards if available, or empty
   const [selectedDeckIds, setSelectedDeckIds] = useState<string[]>([]);
-
   const { cards, fetchCards } = useCards();
 
   // Auto-select deck if profile loaded
@@ -29,10 +31,15 @@ export const DuelPage: React.FC = () => {
     }
   }, [profile, fetchCards]);
 
-  const { joinLobby, gameState, error, summonCard } = useGame(
-    profile?.id || null,
-    selectedDeckIds,
-  );
+  const {
+    joinLobby,
+    gameState,
+    error,
+    summonCard,
+    surrender,
+    gameOver,
+    cancelMatchmaking,
+  } = useGame(profile?.id || null, selectedDeckIds);
 
   const handCards = selectedDeckIds.map((id) => cards[id]).filter(Boolean);
 
@@ -41,6 +48,12 @@ export const DuelPage: React.FC = () => {
     if (gameState === "MATCH_FOUND") {
       summonCard(cardId);
     }
+  };
+
+  const handleReturnToLobby = () => {
+    // For now, reloading or navigating away is the simplest way to reset local state
+    // Ideally useGame should expose a reset function
+    window.location.reload();
   };
 
   if (!account) {
@@ -75,11 +88,36 @@ export const DuelPage: React.FC = () => {
 
   return (
     <div className="bg-background-dark text-white overflow-hidden h-screen flex flex-col">
-      <BackButton />
+      <div className="absolute top-4 left-4 z-50">
+        <BackButton />
+      </div>
+
+      {/* Surrender Button - Only show during battle */}
+      {(gameState === "MATCH_FOUND" ||
+        gameState === "PLAYING" ||
+        gameState === "BATTLE_START") && (
+        <div className="absolute top-4 right-4 z-50">
+          <button
+            onClick={surrender}
+            className="px-4 py-2 bg-red-500/10 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest rounded-sm"
+          >
+            Surrender
+          </button>
+        </div>
+      )}
+
+      {/* Game Over Screen */}
+      {gameOver && (
+        <GameOverScreen
+          winner={gameOver.winner}
+          isWinner={gameOver.isWinner}
+          onReturnToLobby={handleReturnToLobby}
+        />
+      )}
 
       {/* Matchmaking Overlay */}
       {gameState === "IDLE" && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="p-8 bg-zinc-900 border border-primary/30 rounded flex flex-col items-center">
             <h2 className="text-2xl font-bold mb-4 text-primary">
               Ready to Battle?
@@ -102,7 +140,7 @@ export const DuelPage: React.FC = () => {
       )}
 
       {gameState === "QUEUING" && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm">
           <div className="flex flex-col items-center animate-pulse">
             <div className="text-4xl text-primary font-black tracking-widest mb-4">
               SEARCHING
@@ -112,9 +150,7 @@ export const DuelPage: React.FC = () => {
             </div>
             <button
               className="mt-8 text-xs text-red-500 hover:text-red-400"
-              onClick={() => {
-                /* cancel */
-              }}
+              onClick={() => cancelMatchmaking()}
             >
               CANCEL
             </button>

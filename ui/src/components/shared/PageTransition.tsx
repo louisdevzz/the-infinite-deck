@@ -1,13 +1,19 @@
-import React from 'react';
+import React from "react";
 
 interface PageTransitionProps {
-    children: React.ReactNode;
+  children: React.ReactNode;
+  className?: string; // Add optional className
 }
 
-export const PageTransition: React.FC<PageTransitionProps> = ({ children }) => {
-    return (
-        <div className="animate-[fadeInUp_0.5s_ease-out] w-full h-full">
-            {children}
-        </div>
-    );
+export const PageTransition: React.FC<PageTransitionProps> = ({
+  children,
+  className = "",
+}) => {
+  return (
+    <div
+      className={`animate-[fadeInUp_0.5s_ease-out] w-full h-full ${className}`}
+    >
+      {children}
+    </div>
+  );
 };

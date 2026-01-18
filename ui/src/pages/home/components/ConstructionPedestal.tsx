@@ -1,27 +1,53 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MOCK_HOME_DATA, CyberCard } from "../../../data/mockData";
 import { ForgeDialog } from "./ForgeDialog";
+import { usePlayerProfile } from "../../../hooks/usePlayerProfile";
+import { useCards } from "../../../hooks/useCards";
+import { getRarityColor } from "../../../utils/cardStyles";
 
 export const ConstructionPedestal: React.FC = () => {
   // Local state to allow updating the card displayed
+  // Initialize with mock data as fallback
   const [activeCard, setActiveCard] = useState<CyberCard>(
     MOCK_HOME_DATA.activeConstruction as CyberCard,
   );
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const { profile } = usePlayerProfile();
+  const { cards, fetchCards } = useCards();
+
+  // Load latest card from profile
+  useEffect(() => {
+    if (profile?.allCards && profile.allCards.length > 0) {
+      // Get the last card ID (assuming appended to end)
+      const lastCardId = profile.allCards[profile.allCards.length - 1];
+
+      // Fetch data for this card if not available
+      if (!cards[lastCardId]) {
+        fetchCards([lastCardId]);
+      } else {
+        setActiveCard(cards[lastCardId]);
+      }
+    }
+  }, [profile, cards, fetchCards]);
 
   const handleOpenForge = () => {
     setIsDialogOpen(true);
   };
 
   const handleForgeComplete = (newCard: CyberCard) => {
-    setActiveCard(newCard); // Update the displayed card
-    setIsDialogOpen(false); // Close dialog
+    // When forge completes, we might want to refresh profile or just set the new card locally
+    // For now, setting locally gives instant feedback
+    setActiveCard(newCard);
+    setIsDialogOpen(false);
   };
+
+  const rarityStyle = getRarityColor(activeCard.rarity);
 
   return (
     <section className="col-span-6 h-full relative flex flex-col items-center justify-center perspective-container z-20">
       {/* Holographic Emitter Base */}
-      <div className="absolute bottom-[10%] w-[300px] h-[100px] bg-gradient-to-t from-primary/10 to-transparent blur-xl animate-pulse pointer-events-none"></div>
+      <div className="absolute bottom-[10%] w-[300px] h-[100px] bg-linear-to-t from-primary/10 to-transparent blur-xl animate-pulse pointer-events-none"></div>
 
       {/* Dynamic Background Rings */}
       <div className="absolute w-[700px] h-[700px] rounded-full border border-primary/5 pointer-events-none animate-[spin_60s_linear_infinite] opacity-30"></div>
@@ -33,24 +59,26 @@ export const ConstructionPedestal: React.FC = () => {
         {/* Floating Shadow */}
         <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 w-4/5 h-8 bg-primary/20 blur-2xl rounded-full"></div>
 
-        <div className="w-full h-full bg-black/60 backdrop-blur-md rounded-2xl border border-primary/30 shadow-[0_0_40px_rgba(0,229,255,0.15)] flex flex-col p-5 relative overflow-hidden">
+        <div
+          className={`w-full h-full bg-black/60 backdrop-blur-md rounded-2xl border ${rarityStyle.split(" ")[0]} shadow-[0_0_40px_rgba(0,229,255,0.15)] flex flex-col p-5 relative overflow-hidden transition-all duration-300`}
+        >
           {/* Glossy Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none z-20"></div>
+          <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent pointer-events-none z-20"></div>
 
           {/* Status Badge */}
           <div className="absolute top-4 right-4 z-30">
             <div className="bg-black/80 border border-primary/50 text-primary font-mono font-bold text-[10px] px-3 py-1 uppercase tracking-[0.2em] shadow-[0_0_10px_rgba(0,229,255,0.4)] flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
-              {activeCard.status}
+              {activeCard.status || "READY"}
             </div>
           </div>
 
           {/* Card Image Area */}
           <div className="flex-1 bg-black/80 rounded-xl overflow-hidden relative mb-5 border border-white/5 group-hover:border-primary/40 transition-colors shadow-inner">
-            <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent opacity-60 z-10"></div>
+            <div className="absolute inset-0 bg-linear-to-t from-primary/10 to-transparent opacity-60 z-10"></div>
             <img
-              src={activeCard.image}
-              alt={activeCard.name}
+              src={activeCard.img || activeCard.image} // Handle potentially different field names
+              alt={activeCard.title || activeCard.name}
               className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500 scale-105 group-hover:scale-110"
             />
 
@@ -63,31 +91,28 @@ export const ConstructionPedestal: React.FC = () => {
 
           {/* Card Info */}
           <div className="space-y-3 relative z-20">
-            <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] leading-none">
-              {activeCard.name}
+            <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] leading-none truncate">
+              {activeCard.title || activeCard.name}
             </h2>
-            <div className="h-px w-full bg-gradient-to-r from-primary/50 to-transparent"></div>
+            <div className="h-px w-full bg-linear-to-r from-primary/50 to-transparent"></div>
 
             <div className="flex justify-between items-end">
               <div className="flex flex-col gap-1.5">
                 <span className="text-[9px] font-bold text-primary/60 uppercase tracking-[0.2em]">
-                  Molecule Density
+                  Rarity
                 </span>
-                <div className="flex gap-1 h-2">
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                    <div
-                      key={i}
-                      className={`w-2 h-full rounded-[1px] ${i > 6 ? "bg-white/10" : "bg-primary shadow-[0_0_8px_rgba(0,229,255,0.6)]"}`}
-                    ></div>
-                  ))}
-                </div>
+                <span
+                  className={`text-sm font-bold uppercase ${rarityStyle.split(" ")[1]}`}
+                >
+                  {activeCard.rarity}
+                </span>
               </div>
               <div className="text-right">
                 <span className="text-[9px] font-bold text-primary/60 uppercase tracking-[0.2em] block mb-0.5">
-                  Energy Output
+                  ATK / DEF
                 </span>
                 <span className="text-2xl font-mono font-bold text-white tracking-widest leading-none">
-                  {activeCard.stats.integrity}
+                  {activeCard.atk || 0} / {activeCard.def || 0}
                 </span>
               </div>
             </div>
@@ -113,7 +138,10 @@ export const ConstructionPedestal: React.FC = () => {
           SYSTEM <span className="text-white font-bold">ONLINE</span>
           <span>::</span>
           <span>
-            AETHER LINK <span className="text-white font-bold">STABLE</span>
+            LATEST MINT{" "}
+            <span className="text-white font-bold">
+              {activeCard.id ? `#${activeCard.id.substring(0, 4)}` : "N/A"}
+            </span>
           </span>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { useToast } from "../../context/ToastContext";
 import { PageTransition } from "../../components/shared/PageTransition";
 import { usePlayerProfile } from "../../hooks/usePlayerProfile";
 import { useCards } from "../../hooks/useCards";
+import { useCurrentAccount, useSuiClient } from "@mysten/dapp-kit";
 
 export const InventoryPage: React.FC = () => {
   // Selection State
@@ -128,6 +129,21 @@ export const InventoryPage: React.FC = () => {
   // Determine if the selected card is currently equipped
   const isEquipped = selectedCardId ? deck.includes(selectedCardId) : false;
 
+  // Fetch SUI Balance
+  const [suiBalance, setSuiBalance] = useState<string>("0.00");
+  const account = useCurrentAccount();
+  const client = useSuiClient();
+
+  useEffect(() => {
+    if (account) {
+      client.getBalance({ owner: account.address }).then((balance) => {
+        setSuiBalance(
+          (parseInt(balance.totalBalance) / 1_000_000_000).toFixed(2),
+        );
+      });
+    }
+  }, [account, client]);
+
   // Backpack items are allCards excluding those in the current deck
   const backpackItems = (profile?.allCards || []).filter(
     (id: string) => !deck.includes(id),
@@ -136,22 +152,6 @@ export const InventoryPage: React.FC = () => {
   return (
     <div className="bg-background-dark text-white overflow-hidden h-screen flex flex-col relative">
       <BackButton />
-
-      {/* Top Right Controls */}
-      <div className="absolute top-4 right-8 z-50 flex gap-4">
-        <button
-          onClick={handleSync}
-          className="px-4 py-2 bg-zinc-800 text-primary border border-primary/30 rounded hover:bg-zinc-700 text-xs font-bold tracking-widest"
-        >
-          SYNC COLLECTION
-        </button>
-        <button
-          onClick={handleSaveDeck}
-          className="px-6 py-2 bg-primary text-black font-bold rounded hover:bg-primary/80 text-xs tracking-widest"
-        >
-          SAVE DECK
-        </button>
-      </div>
 
       <main className="flex-1 flex overflow-hidden">
         <PageTransition>
@@ -168,6 +168,14 @@ export const InventoryPage: React.FC = () => {
               selectedCardId={selectedCardId}
               onCardSelect={handleCardSelect}
               onClearDeck={handleClearDeck}
+              onSaveDeck={handleSaveDeck}
+              onSyncCollection={handleSync}
+              stats={{
+                wins: profile?.wins ? parseInt(profile.wins) : 0,
+                losses: profile?.losses ? parseInt(profile.losses) : 0,
+                totalCards: profile?.allCards?.length || 0,
+                suiBalance: suiBalance,
+              }}
             />
             <Backpack
               items={backpackItems} // This expects string[]
