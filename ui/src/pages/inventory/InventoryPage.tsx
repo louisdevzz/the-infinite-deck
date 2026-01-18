@@ -150,12 +150,12 @@ export const InventoryPage: React.FC = () => {
   );
 
   return (
-    <div className="bg-background-dark text-white overflow-hidden h-screen flex flex-col relative">
+    <div className="bg-background-dark text-white min-h-screen overflow-y-auto lg:overflow-hidden h-screen flex flex-col relative">
       <BackButton />
 
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex-1 flex overflow-visible lg:overflow-hidden min-h-0">
         <PageTransition>
-          <div className="flex w-full h-full">
+          <div className="flex flex-col lg:flex-row w-full h-auto lg:h-full">
             <CardDetailPanel
               selectedCard={selectedCardData}
               isEquipped={isEquipped}

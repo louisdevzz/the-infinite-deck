@@ -12,7 +12,7 @@ interface CardDetailPanelProps {
 export const CardDetailPanel: React.FC<CardDetailPanelProps> = ({ selectedCard, isEquipped, onEquip, onUnequip }) => {
     if (!selectedCard) {
         return (
-            <aside className="w-[30%] min-w-[250px] max-w-[400px] bg-dark-charcoal/40 backdrop-blur-xl border-r border-white/10 flex flex-col p-4 md:p-8 items-center justify-center text-white/30">
+            <aside className="w-full lg:w-[30%] lg:min-w-[250px] lg:max-w-[400px] bg-dark-charcoal/40 backdrop-blur-xl border-b lg:border-r border-white/10 flex flex-col p-4 md:p-8 items-center justify-center text-white/30 h-[200px] lg:h-full order-1 lg:order-none shrink-0">
                 <span className="material-symbols-outlined text-4xl mb-2">touch_app</span>
                 <p className="text-sm font-bold uppercase tracking-widest">Select a node to inspect</p>
             </aside>
@@ -24,7 +24,7 @@ export const CardDetailPanel: React.FC<CardDetailPanelProps> = ({ selectedCard, 
     const elementColor = getElementColor(selectedCard.element);
 
     return (
-        <aside className="w-[30%] min-w-[250px] max-w-[400px] bg-dark-charcoal/40 backdrop-blur-xl border-r border-white/10 flex flex-col p-4 md:p-8 overflow-y-auto card-grid-container">
+        <aside className="w-full lg:w-[30%] lg:min-w-[250px] lg:max-w-[400px] bg-dark-charcoal/40 backdrop-blur-xl border-b lg:border-r border-white/10 flex flex-col p-4 md:p-8 overflow-y-auto card-grid-container order-1 lg:order-none h-auto lg:h-full shrink-0">
             {/* Card Preview */}
             <div className="relative group mb-8">
                 <div className={`aspect-[3/4] w-full bg-black border-2 rounded-sm overflow-hidden relative ${rarityStyle}`}>

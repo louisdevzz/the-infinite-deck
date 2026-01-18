@@ -145,7 +145,7 @@ export const MarketPage: React.FC = () => {
 
       <BackButton />
 
-      <main className="flex-1 flex flex-col px-6 lg:px-12 py-6 max-w-[1600px] mx-auto w-full">
+      <main className="flex-1 flex flex-col px-4 py-4 lg:px-12 lg:py-6 max-w-[1600px] mx-auto w-full">
         <MarketStatsBar
           activeView={activeView}
           filterElement={filterElement}
@@ -155,8 +155,8 @@ export const MarketPage: React.FC = () => {
           onSearchChange={setSearchTerm}
         />
         <PageTransition>
-          <div className="grid grid-cols-12 gap-8">
-            <div className="col-span-12 lg:col-span-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+            <div className="col-span-1 lg:col-span-8 order-2 lg:order-none">
               {isLoading ? (
                 <MarketSkeleton />
               ) : (

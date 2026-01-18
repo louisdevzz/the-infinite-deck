@@ -20,7 +20,7 @@ export const Backpack: React.FC<BackpackProps> = ({
   onCardSelect,
 }) => {
   return (
-    <aside className="w-[30%] min-w-[250px] max-w-[350px] lg:w-[400px] xl:w-[450px] bg-dark-charcoal/40 backdrop-blur-xl border-l border-white/10 flex flex-col overflow-hidden transition-all duration-300">
+    <aside className="w-full lg:w-[30%] lg:min-w-[250px] lg:max-w-[450px] bg-dark-charcoal/40 backdrop-blur-xl border-t lg:border-l border-white/10 flex flex-col overflow-hidden transition-all duration-300 order-3 lg:order-none h-[500px] lg:h-full shrink-0">
       <div className="p-8 border-b border-white/5 bg-black/20">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3 bg-primary/10 border-l-4 border-primary px-4 py-2">

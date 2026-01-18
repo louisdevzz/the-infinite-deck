@@ -27,25 +27,25 @@ export const MarketStatsBar: React.FC<MarketStatsBarProps> = ({
 
     return (
         <>
-            <div className="mb-6 flex items-center justify-between">
-                <div className="flex gap-4 items-center">
+            <div className="mb-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 lg:gap-0">
+                <div className="flex flex-col md:flex-row gap-4 items-stretch lg:items-center w-full lg:w-auto">
                     <div className="flex gap-1">
                         <button
                             onClick={() => onViewChange('FEED')}
-                            className={`flex items-center px-6 py-2 font-bold text-xs tracking-widest uppercase rounded-sm border transition-all ${activeView === 'FEED' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-surface/40 text-primary/60 border-primary/10 hover:border-primary/40'}`}
+                            className={`flex-1 flex items-center justify-center px-4 lg:px-6 py-2 font-bold text-[10px] lg:text-xs tracking-widest uppercase rounded-sm border transition-all ${activeView === 'FEED' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-surface/40 text-primary/60 border-primary/10 hover:border-primary/40'}`}
                         >
                             Market Feed
                         </button>
                         <button
                             onClick={() => onViewChange('MY_LISTINGS')}
-                            className={`flex items-center px-6 py-2 font-bold text-xs tracking-widest uppercase rounded-sm border transition-all ${activeView === 'MY_LISTINGS' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-surface/40 text-primary/60 border-primary/10 hover:border-primary/40'}`}
+                            className={`flex-1 flex items-center justify-center px-4 lg:px-6 py-2 font-bold text-[10px] lg:text-xs tracking-widest uppercase rounded-sm border transition-all ${activeView === 'MY_LISTINGS' ? 'bg-primary text-background-dark border-primary shadow-[0_0_15px_rgba(0,255,255,0.2)]' : 'bg-surface/40 text-primary/60 border-primary/10 hover:border-primary/40'}`}
                         >
                             My Listings
                         </button>
                     </div>
 
                     {/* Integrated Search Bar */}
-                    <div className="relative w-64 h-full">
+                    <div className="relative w-full lg:w-64 h-full">
                         <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary/40 text-lg">search</span>
                         <input
                             className="w-full bg-surface/40 border border-primary/20 rounded-sm py-2 pl-10 pr-4 text-[10px] font-bold tracking-widest text-white placeholder:text-white/20 focus:outline-none focus:border-primary/50 focus:ring-0 transition-all uppercase h-[34px]"
@@ -56,7 +56,7 @@ export const MarketStatsBar: React.FC<MarketStatsBarProps> = ({
                     </div>
                 </div>
 
-                <div className="text-[10px] text-primary/40 uppercase tracking-[0.2em] font-mono">
+                <div className="text-[9px] lg:text-[10px] text-primary/40 uppercase tracking-[0.2em] font-mono w-full lg:w-auto text-right">
                     Index_Stable: <span className="text-primary tabular-nums">{stats.indexStable.toLocaleString('de-DE', { minimumFractionDigits: 2 })} SUI</span>
                 </div>
             </div>

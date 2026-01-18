@@ -33,8 +33,8 @@ export const ActiveDeck: React.FC<ActiveDeckProps> = ({
   stats,
 }) => {
   return (
-    <section className="flex-1 bg-background-dark/30 flex flex-col p-8 overflow-hidden">
-      <div className="flex items-center justify-between mb-8">
+    <section className="flex-1 bg-background-dark/30 flex flex-col p-4 lg:p-8 overflow-visible lg:overflow-hidden order-2 lg:order-none min-h-[400px]">
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between mb-6 lg:mb-8 gap-4 lg:gap-0">
         <div className="flex items-center gap-4">
           <span className="material-symbols-outlined text-primary text-3xl">
             layers
@@ -48,31 +48,31 @@ export const ActiveDeck: React.FC<ActiveDeckProps> = ({
             </span>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 lg:gap-3 w-full lg:w-auto">
           <button
             onClick={onSyncCollection}
-            className="px-4 py-2 bg-zinc-800 text-primary border border-primary/30 text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-700 transition-all flex items-center gap-2"
+            className="flex-1 lg:flex-none px-3 lg:px-4 py-2 bg-zinc-800 text-primary border border-primary/30 text-[10px] font-bold uppercase tracking-widest hover:bg-zinc-700 transition-all flex items-center justify-center gap-2"
           >
             <span className="material-symbols-outlined text-[14px]">sync</span>
             SYNC
           </button>
           <button
             onClick={onClearDeck}
-            className="px-4 py-2 bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+            className="flex-1 lg:flex-none px-3 lg:px-4 py-2 bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
           >
             Clear All
           </button>
           <button
             onClick={onSaveDeck}
-            className="px-6 py-2 bg-primary text-matrix-black text-[10px] font-black uppercase tracking-widest cyan-glow hover:bg-primary-light transition-all"
+            className="flex-1 lg:flex-none px-4 lg:px-6 py-2 bg-primary text-matrix-black text-[10px] font-black uppercase tracking-widest cyan-glow hover:bg-primary-light transition-all"
           >
-            Save Deck
+            Save
           </button>
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col gap-12 justify-center">
-        <div className="grid grid-cols-5 gap-6 max-w-4xl mx-auto w-full relative">
+      <div className="flex-1 flex flex-col gap-8 lg:gap-12 justify-center">
+        <div className="grid grid-cols-5 md:grid-cols-5 gap-2 lg:gap-6 max-w-4xl mx-auto w-full relative">
           {/* Empty Deck Guidance Overlay */}
           {deck.every((c) => c === null) && (
             <div className="absolute inset-0 flex flex-col items-center justify-center z-20 pointer-events-none">
@@ -166,8 +166,8 @@ export const ActiveDeck: React.FC<ActiveDeckProps> = ({
           })}
         </div>
 
-        <div className="flex justify-center gap-16 pt-12 border-t border-white/5 max-w-4xl mx-auto w-full">
-          <div className="text-center">
+        <div className="flex flex-wrap lg:flex-nowrap justify-center gap-6 lg:gap-16 pt-8 lg:pt-12 border-t border-white/5 max-w-4xl mx-auto w-full">
+          <div className="text-center w-full lg:w-auto">
             <p className="text-[10px] text-white/40 font-bold uppercase mb-2 tracking-widest">
               Battle Record
             </p>
@@ -175,7 +175,7 @@ export const ActiveDeck: React.FC<ActiveDeckProps> = ({
               {stats.wins}W - {stats.losses}L
             </p>
           </div>
-          <div className="text-center">
+          <div className="text-center w-[45%] lg:w-auto">
             <p className="text-[10px] text-white/40 font-bold uppercase mb-2 tracking-widest">
               Collection Size
             </p>
@@ -183,7 +183,7 @@ export const ActiveDeck: React.FC<ActiveDeckProps> = ({
               {stats.totalCards} Nodes
             </p>
           </div>
-          <div className="text-center">
+          <div className="text-center w-[45%] lg:w-auto">
             <p className="text-[10px] text-white/40 font-bold uppercase mb-2 tracking-widest">
               Sui Balance
             </p>

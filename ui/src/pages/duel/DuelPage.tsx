@@ -87,7 +87,7 @@ export const DuelPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-background-dark text-white overflow-hidden h-screen flex flex-col">
+    <div className="bg-background-dark text-white overflow-hidden h-screen w-full fixed inset-0 flex flex-col touch-none">
       <div className="absolute top-4 left-4 z-50">
         <BackButton />
       </div>
@@ -96,15 +96,15 @@ export const DuelPage: React.FC = () => {
       {(gameState === "MATCH_FOUND" ||
         gameState === "PLAYING" ||
         gameState === "BATTLE_START") && (
-        <div className="absolute top-4 right-4 z-50">
-          <button
-            onClick={surrender}
-            className="px-4 py-2 bg-red-500/10 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest rounded-sm"
-          >
-            Surrender
-          </button>
-        </div>
-      )}
+          <div className="absolute top-4 right-4 z-50">
+            <button
+              onClick={surrender}
+              className="px-4 py-2 bg-red-500/10 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white transition-all text-xs font-bold uppercase tracking-widest rounded-sm"
+            >
+              Surrender
+            </button>
+          </div>
+        )}
 
       {/* Game Over Screen */}
       {gameOver && (
@@ -117,8 +117,8 @@ export const DuelPage: React.FC = () => {
 
       {/* Matchmaking Overlay */}
       {gameState === "IDLE" && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="p-8 bg-zinc-900 border border-primary/30 rounded flex flex-col items-center">
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="p-8 bg-zinc-900 border border-primary/30 rounded flex flex-col items-center w-full max-w-md mx-4">
             <h2 className="text-2xl font-bold mb-4 text-primary">
               Ready to Battle?
             </h2>

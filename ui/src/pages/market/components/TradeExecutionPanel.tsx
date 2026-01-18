@@ -17,8 +17,8 @@ export const TradeExecutionPanel: React.FC<TradeExecutionPanelProps> = ({
     // If no card is selected, show empty state
     if (!selectedCard) {
         return (
-            <aside className="col-span-12 lg:col-span-4 flex flex-col gap-6 opacity-50 pointer-events-none grayscale">
-                <div className="terminal-border bg-surface/30 p-6 rounded-sm sticky top-24 h-[400px] flex items-center justify-center border-dashed border-primary/30">
+            <aside className="col-span-1 lg:col-span-4 flex flex-col gap-6 opacity-50 pointer-events-none grayscale h-auto lg:h-[calc(100vh-120px)]">
+                <div className="terminal-border bg-surface/30 p-4 lg:p-6 rounded-sm lg:sticky lg:top-24 h-[300px] lg:h-[400px] flex items-center justify-center border-dashed border-primary/30">
                     <div className="text-center">
                         <span className="material-symbols-outlined text-4xl text-primary/20 mb-2">touch_app</span>
                         <p className="text-[10px] uppercase tracking-widest text-primary/40 font-bold">Select an Asset initiate trade</p>
@@ -33,8 +33,8 @@ export const TradeExecutionPanel: React.FC<TradeExecutionPanelProps> = ({
     const usdPrice = total * 1.68; // Mock USD conversion rate
 
     return (
-        <aside className="col-span-12 lg:col-span-4 flex flex-col gap-6 animate-[fadeIn_0.5s_ease-out]">
-            <div className="terminal-border bg-surface/30 p-6 rounded-sm sticky top-24">
+        <aside className="col-span-1 lg:col-span-4 flex flex-col gap-6 animate-[fadeIn_0.5s_ease-out] order-last lg:order-none">
+            <div className="terminal-border bg-surface/30 p-4 lg:p-6 rounded-sm lg:sticky lg:top-24">
                 <div className="flex items-center gap-2 mb-6 border-b border-primary/20 pb-4">
                     <span className="material-symbols-outlined text-primary text-sm">settings_input_component</span>
                     <h2 className="text-primary text-sm font-bold tracking-[0.25em] uppercase">Trade Execution</h2>
