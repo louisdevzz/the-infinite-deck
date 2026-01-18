@@ -25,7 +25,7 @@ function App() {
 
           {/* Placeholder Routes */}
           <Route path="/deck" element={<ComingSoonPage />} />
-          <Route path="/profile" element={<ComingSoonPage />} />
+
           <Route path="/history" element={<ComingSoonPage />} />
         </Routes>
       </UserProvider>

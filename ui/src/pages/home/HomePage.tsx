@@ -21,6 +21,12 @@ export const HomePage: React.FC = () => {
                 </div>
             </div>
 
+            {/* Ambient Background Effects */}
+            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[150vw] h-[150vw] bg-[radial-gradient(circle_at_center,rgba(0,229,255,0.03)_0%,transparent_60%)]"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(0,229,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,229,255,0.02)_1px,transparent_1px)] bg-[size:100px_100px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_100%)]"></div>
+            </div>
+
             {/* Central Workspace */}
             <main className="flex-1 grid grid-cols-12 gap-2 md:gap-8 items-center overflow-hidden relative z-10">
                 <Sidebar />

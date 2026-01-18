@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Header } from '../../components/shared/Header';
+import { BackButton } from '../../components/shared/BackButton';
 import { Footer } from '../../components/shared/Footer';
 import { MarketStatsBar, ViewMode, ElementType, RarityType } from './components/MarketStatsBar';
 import { MarketListings } from './components/MarketListings';
@@ -135,7 +135,7 @@ export const MarketPage: React.FC = () => {
                 />
             )}
 
-            <Header />
+            <BackButton />
 
             <main className="flex-1 flex flex-col px-6 lg:px-12 py-6 max-w-[1600px] mx-auto w-full">
                 <MarketStatsBar

@@ -4,7 +4,7 @@ import { Box, Button, Container, Heading } from "@radix-ui/themes";
 import { useState } from "react";
 import { Greeting } from './Greeting';
 import { CreateGreeting } from "./CreateGreeting";
-import { Header } from '../../components/shared/Header';
+import { BackButton } from '../../components/shared/BackButton';
 import { Footer } from '../../components/shared/Footer';
 
 export function StarterPage() {
@@ -16,7 +16,7 @@ export function StarterPage() {
 
     return (
         <div className="bg-background-dark font-display text-white selection:bg-primary/30 min-h-screen flex flex-col relative overflow-hidden">
-            <Header />
+            <BackButton />
 
             <main className="flex-1 flex flex-col items-center justify-center p-8 relative z-10 overflow-auto">
                 {/* Background Grid */}
