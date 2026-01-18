@@ -1,71 +1,35 @@
-import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
-import { isValidSuiObjectId } from "@mysten/sui/utils";
-import { Box, Button, Container, Flex, Heading } from "@radix-ui/themes";
-import { useState } from "react";
-import { Greeting } from './Greeting';
-import { CreateGreeting } from "./CreateGreeting";
+import { Routes, Route } from 'react-router-dom';
+import { ToastProvider } from './context/ToastContext';
+import { UserProvider } from './context/UserContext';
+import { HomePage } from './pages/home/HomePage';
+import { ChatPage } from './pages/chat/ChatPage';
+import { MarketPage } from './pages/market/MarketPage';
+import { StarterPage } from './pages/starter/StarterPage';
+import { ComingSoonPage } from './pages/ComingSoonPage';
+import { DuelPage } from './pages/duel/DuelPage';
+import { InventoryPage } from './pages/inventory/InventoryPage';
+import { LandscapePrompt } from './components/shared/LandscapePrompt';
 
 function App() {
-  const currentAccount = useCurrentAccount();
-  const [greetingId, setGreeting] = useState(() => {
-    const hash = window.location.hash.slice(1);
-    return isValidSuiObjectId(hash) ? hash : null;
-  });
-
   return (
-    <>
-      <Flex
-        position="sticky"
-        px="4"
-        py="2"
-        justify="between"
-        align={"center"}
-        style={{
-          borderBottom: "1px solid var(--gray-a2)",
-        }}
-      >
-        <Box>
-          <Heading>dApp Starter Template</Heading>
-        </Box>
+    <ToastProvider>
+      <UserProvider>
+        <LandscapePrompt />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/market" element={<MarketPage />} />
+          <Route path="/dapp" element={<StarterPage />} />
+          <Route path="/duel" element={<DuelPage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
 
-        <Box style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          {currentAccount && (
-            <Button
-              variant="soft"
-              onClick={() => {
-                window.open(`https://faucet.sui.io/?address=${currentAccount.address}`, '_blank');
-              }}
-            >
-              Get Testnet SUI
-            </Button>
-          )}
-          <ConnectButton />
-        </Box>
-      </Flex>
-      <Container>
-        <Container
-          mt="5"
-          pt="2"
-          px="4"
-          style={{ background: "var(--gray-a2)", minHeight: 500 }}
-        >
-          {currentAccount ? (
-            greetingId ? (
-              <Greeting id={greetingId} />
-            ) : (
-              <CreateGreeting
-                onCreated={(id) => {
-                  window.location.hash = id;
-                  setGreeting(id);
-                }}
-              />
-            )
-          ) : (
-            <Heading>Please connect your wallet</Heading>
-          )}
-        </Container>
-      </Container>
-    </>
+          {/* Placeholder Routes */}
+          <Route path="/deck" element={<ComingSoonPage />} />
+          <Route path="/profile" element={<ComingSoonPage />} />
+          <Route path="/history" element={<ComingSoonPage />} />
+        </Routes>
+      </UserProvider>
+    </ToastProvider>
   );
 }
 
