@@ -6,7 +6,7 @@ import {
 import type { SuiObjectData } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
 import { Button, Flex, Heading, Text, TextField } from "@radix-ui/themes";
-import { useNetworkVariable } from "./networkConfig";
+import { useNetworkVariable } from "../../networkConfig";
 import { useState } from "react";
 import ClipLoader from "react-spinners/ClipLoader";
 
@@ -64,7 +64,7 @@ export function Greeting({ id }: { id: string }) {
       <Flex direction="column" gap="2">
         <Text>Text: {getGreetingFields(data.data)?.text}</Text>
         <Flex direction="row" gap="2">
-          <TextField.Root 
+          <TextField.Root
             placeholder={getGreetingFields(data.data)?.text}
             value={newText}
             onChange={(e) => {
@@ -76,7 +76,7 @@ export function Greeting({ id }: { id: string }) {
             onClick={() => executeMoveCall()}
             disabled={waitingForTxn}
           >
-            {waitingForTxn? (
+            {waitingForTxn ? (
               <ClipLoader size={20} />
             ) : (
               "Update"

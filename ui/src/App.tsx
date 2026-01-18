@@ -1,25 +1,35 @@
-import { ConnectButton, useCurrentAccount } from "@mysten/dapp-kit";
-import { isValidSuiObjectId } from "@mysten/sui/utils";
-import { Box, Button, Container, Flex, Heading } from "@radix-ui/themes";
-import { useState } from "react";
-import { Greeting } from "./Greeting";
-import { CreateGreeting } from "./CreateGreeting";
+import { Routes, Route } from "react-router-dom";
+import { ToastProvider } from "./context/ToastContext";
+import { UserProvider } from "./context/UserContext";
+import { HomePage } from "./pages/home/HomePage";
+import { ChatPage } from "./pages/chat/ChatPage";
+import { MarketPage } from "./pages/market/MarketPage";
+import { StarterPage } from "./pages/starter/StarterPage";
+import { ComingSoonPage } from "./pages/ComingSoonPage";
+import { DuelPage } from "./pages/duel/DuelPage";
+import { InventoryPage } from "./pages/inventory/InventoryPage";
+import { LandscapePrompt } from "./components/shared/LandscapePrompt";
 
 function App() {
-  const currentAccount = useCurrentAccount();
-  const [greetingId, setGreeting] = useState(() => {
-    const hash = window.location.hash.slice(1);
-    return isValidSuiObjectId(hash) ? hash : null;
-  });
-
   return (
-    <>
-      <div>hello</div>
-      <img
-        className="w-[40px] h-[50px]"
-        src="https://aggregator.walrus-testnet.walrus.space/v1/blobs/CIvukFxZQuHy67PR4PzxWhuw0Bhga3gIHJbctRdLG1U"
-      />
-    </>
+    <ToastProvider>
+      <UserProvider>
+        <LandscapePrompt />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/market" element={<MarketPage />} />
+          <Route path="/dapp" element={<StarterPage />} />
+          <Route path="/duel" element={<DuelPage />} />
+          <Route path="/inventory" element={<InventoryPage />} />
+
+          {/* Placeholder Routes */}
+          <Route path="/deck" element={<ComingSoonPage />} />
+          <Route path="/profile" element={<ComingSoonPage />} />
+          <Route path="/history" element={<ComingSoonPage />} />
+        </Routes>
+      </UserProvider>
+    </ToastProvider>
   );
 }
 

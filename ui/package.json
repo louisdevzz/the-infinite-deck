@@ -18,19 +18,27 @@
     "@tanstack/react-query": "^5.83.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "react-router-dom": "^7.12.0",
     "react-spinners": "^0.17.0"
   },
   "devDependencies": {
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.38.0",
     "@typescript-eslint/parser": "^8.38.0",
     "@vitejs/plugin-react-swc": "^3.11.0",
+    "autoprefixer": "^10.4.23",
     "eslint": "^9.17.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "postcss": "^8.5.6",
     "prettier": "^3.6.2",
+    "tailwindcss": "^4.1.18",
     "typescript": "^5.8.3",
-    "vite": "^7.0.5"
+    "vite": "^6.0.0"
   }
 }

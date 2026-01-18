@@ -1,7 +1,7 @@
 import { Transaction } from "@mysten/sui/transactions";
 import { Button, Container } from "@radix-ui/themes";
 import { useSignAndExecuteTransaction, useSuiClient } from "@mysten/dapp-kit";
-import { useNetworkVariable } from "./networkConfig";
+import { useNetworkVariable } from "../../networkConfig";
 import { useState } from "react";
 import { ClipLoader } from "react-spinners";
 
@@ -12,7 +12,7 @@ export function CreateGreeting({
 }) {
   const helloWorldPackageId = useNetworkVariable("helloWorldPackageId");
   const suiClient = useSuiClient();
-  const { mutate: signAndExecute } = useSignAndExecuteTransaction();	
+  const { mutate: signAndExecute } = useSignAndExecuteTransaction();
 
   const [waitingForTxn, setWaitingForTxn] = useState(false);
 
@@ -54,7 +54,7 @@ export function CreateGreeting({
         }}
         disabled={waitingForTxn}
       >
-        {waitingForTxn? (
+        {waitingForTxn ? (
           <ClipLoader size={20} />
         ) : (
           "Create Greeting"
