@@ -34,6 +34,7 @@ export const Header: React.FC = () => {
                     </>
                 ) : (
                     <nav className="flex items-center gap-1 h-full">
+                        <Link to="/matchmaking" className={`px-2 md:px-4 h-full flex items-center text-[10px] md:text-[11px] font-bold tracking-widest uppercase transition-colors ${location.pathname === '/matchmaking' ? 'text-primary border-b-2 border-primary' : 'text-white/40 hover:text-white'}`}>PLAY</Link>
                         <Link to="/market" className={`px-2 md:px-4 h-full flex items-center text-[10px] md:text-[11px] font-bold tracking-widest uppercase transition-colors ${location.pathname === '/market' ? 'text-primary border-b-2 border-primary' : 'text-white/40 hover:text-white'}`}>Store</Link>
                         <Link to="/inventory" className={`px-2 md:px-4 h-full flex items-center text-[10px] md:text-[11px] font-bold tracking-widest uppercase transition-colors ${location.pathname === '/inventory' ? 'text-primary border-b-2 border-primary' : 'text-white/40 hover:text-white'}`}>Inv</Link>
                         <Link to="/chat" className={`px-2 md:px-4 h-full flex items-center text-[10px] md:text-[11px] font-bold tracking-widest uppercase transition-colors ${location.pathname === '/chat' ? 'text-primary border-b-2 border-primary' : 'text-white/40 hover:text-white'}`}>Missions</Link>

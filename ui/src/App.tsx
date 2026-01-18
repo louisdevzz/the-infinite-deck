@@ -10,6 +10,8 @@ import { DuelPage } from "./pages/duel/DuelPage";
 import { InventoryPage } from "./pages/inventory/InventoryPage";
 import { LandscapePrompt } from "./components/shared/LandscapePrompt";
 
+import { MatchmakingPage } from "./pages/matchmaking/MatchmakingPage";
+
 function App() {
   return (
     <ToastProvider>
@@ -20,6 +22,7 @@ function App() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/market" element={<MarketPage />} />
           <Route path="/dapp" element={<StarterPage />} />
+          <Route path="/matchmaking" element={<MatchmakingPage />} />
           <Route path="/duel" element={<DuelPage />} />
           <Route path="/inventory" element={<InventoryPage />} />
 

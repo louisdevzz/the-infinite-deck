@@ -15,7 +15,7 @@ export const DuelPage: React.FC = () => {
                 </div>
 
                 {/* Game Board Scaled for Mobile Landscape */}
-                <div className="flex-1 flex justify-center origin-center scale-[0.6] md:scale-[0.8] xl:scale-100 transition-transform h-full">
+                <div className="flex-1 flex justify-center origin-center scale-[0.6] md:scale-[0.8] xl:scale-[0.85] transition-transform h-full">
                     <GameBoard />
                 </div>
 
