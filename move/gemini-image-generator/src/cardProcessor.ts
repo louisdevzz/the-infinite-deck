@@ -27,13 +27,14 @@ interface CardStats {
 }
 
 const RARITY_NAMES = ["Common", "Uncommon", "Epic", "Legendary"];
-const BORDER_COLORS = ["green", "blue", "purple", "gold"];
-const TEMPLATE_FILES = [
-  "common_example.png",
-  "uncommon_example.png", 
-  "epic_example.png",
-  "legend_example.png"
-];
+
+// Reference images cho từng rarity (đặt trong thư mục references/)
+const REFERENCE_IMAGES: Record<number, string> = {
+  0: "reference_common.jpg",
+  1: "reference_uncommon.jpg", 
+  2: "reference_epic.jpg",
+  3: "reference_legendary.jpg"
+};
 
 const ELEMENT_ICONS: Record<string, string> = {
   "Fire": "🔥",
@@ -42,6 +43,16 @@ const ELEMENT_ICONS: Record<string, string> = {
   "Lightning": "⚡",
   "Dark": "🌑",
   "Light": "✨"
+};
+
+// Descriptions cho mỗi element để AI hiểu rõ hơn
+const ELEMENT_STYLES: Record<string, string> = {
+  "Fire": "surrounded by flames and embers, warm orange and red tones, fiery atmosphere",
+  "Water": "surrounded by flowing water and bubbles, cool blue tones, aquatic atmosphere",
+  "Earth": "surrounded by rocks and nature, green and brown tones, natural atmosphere",
+  "Lightning": "surrounded by electric sparks and lightning bolts, bright yellow and purple tones, electric atmosphere",
+  "Dark": "surrounded by shadows and dark energy, deep purple and black tones, mysterious atmosphere",
+  "Light": "surrounded by radiant light and sparkles, bright white and golden tones, divine atmosphere"
 };
 
 const processedCards = new Set<string>();
@@ -102,45 +113,66 @@ async function generateCardImage(
   console.log(`🛡️  DEF: ${stats.def}`);
   console.log(`❤️  HP: ${stats.hp}`);
 
-  const framePath = path.join(process.cwd(), "images", TEMPLATE_FILES[rarity]);
-
   try {
-    if (!fs.existsSync(framePath)) {
-      throw new Error(`Template not found: ${framePath}`);
+    console.log("🎨 Generating character artwork...");
+
+    const elementStyle = ELEMENT_STYLES[element] || "mystical energy surrounding";
+    
+    // Load reference image nếu có
+    let referenceBase64: string | null = null;
+    const referenceFilename = REFERENCE_IMAGES[rarity];
+    const referencePath = path.join(process.cwd(), "references", referenceFilename);
+    
+    if (fs.existsSync(referencePath)) {
+      const referenceBuffer = fs.readFileSync(referencePath);
+      referenceBase64 = referenceBuffer.toString("base64");
+      console.log(`🖼️  Using reference: ${referenceFilename}`);
+    } else {
+      console.warn(`⚠️  Reference image not found: ${referencePath}`);
     }
 
-    const frameBuffer = fs.readFileSync(framePath);
-    const frameBase64 = frameBuffer.toString("base64");
+    const cardPrompt = `Create a high-quality fantasy character illustration for a trading card game.
 
-    console.log(`🖼️  Using template: ${TEMPLATE_FILES[rarity]}`);
-    console.log("🎨 Generating card artwork...");
+${referenceBase64 ? "REFERENCE IMAGE: Study the art style, quality, and atmosphere from the reference image. Learn from its composition, lighting, and detail level. But DO NOT copy any frames, borders, text, or UI elements." : ""}
 
-    const cardPrompt = `Create a fantasy trading card using the reference image as style guide.
+CHARACTER: ${prompt}
 
-REQUIREMENTS:
-1. Copy the exact card layout, border (${BORDER_COLORS[rarity]} color), and frame design from reference
-2. Draw the main character/creature: "${prompt}"
-3. Maintain the same template structure and decorative elements
-4. High quality fantasy trading card art style
-5. No name on the card! please!
+STYLE REQUIREMENTS:
+- Epic fantasy art style, detailed and vibrant
+- ${elementStyle}
+- ${RARITY_NAMES[rarity]} quality: ${rarity === 3 ? "extremely detailed, masterpiece quality" : rarity === 2 ? "high detail, premium quality" : rarity === 1 ? "good detail, quality artwork" : "standard fantasy art"}
+- Dynamic pose showing power and personality
+- Cosmic/magical background with stars and energy swirls
+- Full body or upper body portrait
+- Professional trading card game artwork quality
+- Match the artistic quality and atmosphere from the reference
 
-Create beautiful character artwork that matches the reference card style with ${element} theme.`;
+DO NOT INCLUDE:
+- No text, numbers, or card stats
+- No borders or frames
+- No card template elements
+- No blank or white parts on image
+- Just the pure character artwork
 
-    const contents = [
-      { text: cardPrompt },
-      {
+Focus on creating beautiful, powerful character art with ${element} theme that matches the reference's quality and style.`;
+
+    // Xây dựng contents với hoặc không có reference image
+    const contents: any[] = [{ text: cardPrompt }];
+    
+    if (referenceBase64) {
+      contents.push({
         inlineData: {
-          mimeType: "image/png",
-          data: frameBase64
+          mimeType: "image/jpeg",
+          data: referenceBase64
         }
-      }
-    ];
+      });
+    }
 
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-image",
       contents: contents,
       config: {
-        responseModalities: ["TEXT", "IMAGE"]
+        responseModalities: ["IMAGE"]
       }
     });
 
@@ -279,7 +311,7 @@ async function main() {
 
   console.log("🚀 Card Processor Started (Polling Mode)");
   console.log(`📦 Package: ${PACKAGE_ID}`);
-  console.log(`🖼️  Templates: ${TEMPLATE_FILES.length} rarity styles loaded`);
+  console.log(`🎨 Mode: Pure Character Artwork with Style References`);
   console.log("⚠️  Press Ctrl+C to stop\n");
 
   const client = new SuiClient({ url: "https://fullnode.testnet.sui.io:443" });
@@ -292,6 +324,26 @@ async function main() {
     console.error("❌ Failed to connect:", error);
     process.exit(1);
   }
+
+  // Kiểm tra reference images
+  console.log("🖼️  Checking reference images...");
+  const referencesDir = path.join(process.cwd(), "references");
+  if (!fs.existsSync(referencesDir)) {
+    console.warn("⚠️  Creating references/ folder...");
+    fs.mkdirSync(referencesDir, { recursive: true });
+  }
+  
+  let foundReferences = 0;
+  for (const [rarity, filename] of Object.entries(REFERENCE_IMAGES)) {
+    const refPath = path.join(referencesDir, filename);
+    if (fs.existsSync(refPath)) {
+      console.log(`  ✅ ${RARITY_NAMES[parseInt(rarity)]}: ${filename}`);
+      foundReferences++;
+    } else {
+      console.log(`  ⚠️  ${RARITY_NAMES[parseInt(rarity)]}: ${filename} (missing)`);
+    }
+  }
+  console.log(`📊 Found ${foundReferences}/4 reference images\n`);
 
   console.log("🐋 Initializing Walrus uploader...");
   let walrusUploader: WalrusUploader;

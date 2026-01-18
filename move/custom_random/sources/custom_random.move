@@ -30,7 +30,7 @@ module custom_random::quadratic_random {
         sample_with_generator(&mut generator)
     }
 
-    fun sample_with_generator(generator: &mut RandomGenerator): u64 {
+    public fun sample_with_generator(generator: &mut RandomGenerator): u64 {
         let mut attempts = 0u64;
         loop {
             let x = generator.generate_u64_in_range(0, 2000);

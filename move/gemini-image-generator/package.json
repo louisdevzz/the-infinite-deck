@@ -24,6 +24,7 @@
     "@mysten/sui": "^1.45.2",
     "@mysten/sui.js": "^0.54.1",
     "@mysten/walrus": "^0.9.0",
+    "axios": "^1.13.2",
     "dotenv": "^17.2.3",
     "sharp": "^0.34.5"
   }

@@ -2,19 +2,16 @@ import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
 import { Transaction } from "@mysten/sui/transactions";
 import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
 import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
-import { execFile } from "child_process";
-import { promisify } from "util";
-import * as fs from "fs";
+import { WalrusClient, RetryableWalrusClientError } from '@mysten/walrus';
+import { readFileSync } from 'fs';
 import * as dotenv from "dotenv";
 
 dotenv.config();
 
-const execFileAsync = promisify(execFile);
-
 export class WalrusUploader {
   private suiClient: SuiClient;
+  private walrusClient: WalrusClient;
   private keypair: Ed25519Keypair;
-  private walrusCliPath: string;
 
   constructor() {
     // Parse private key
@@ -30,55 +27,60 @@ export class WalrusUploader {
 
     // Initialize Sui Client
     this.suiClient = new SuiClient({ 
-      url: "https://sui-testnet-rpc.publicnode.com"
+      url: getFullnodeUrl('testnet')
     });
 
-    // Đường dẫn đến walrus.exe
-    this.walrusCliPath = "C:\\walrus\\walrus.exe";
+    // Initialize Walrus Client
+    this.walrusClient = new WalrusClient({
+      network: 'testnet',
+      suiClient: this.suiClient,
+    });
   }
 
   async uploadImage(imagePath: string, maxRetries: number = 3): Promise<string> {
     console.log(`📤 Uploading to Walrus: ${imagePath}`);
 
-    if (!fs.existsSync(imagePath)) {
-      throw new Error(`File not found: ${imagePath}`);
-    }
-
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const { stdout, stderr } = await execFileAsync(
-          this.walrusCliPath,
-          ['store', '--epochs', '5', '--permanent', imagePath],
-          { maxBuffer: 10 * 1024 * 1024 }
-        );
+        // Đọc file thành bytes
+        const fileBytes = readFileSync(imagePath);
 
-        const blobIdMatch = stdout.match(/Blob ID:\s*([A-Za-z0-9_-]+)/i);
-        
-        if (!blobIdMatch || !blobIdMatch[1]) {
-          console.error("❌ Could not parse Blob ID from output:");
-          console.error(stdout);
-          throw new Error("Failed to extract Blob ID from Walrus CLI output");
-        }
+        // Upload lên Walrus
+        const { blobId, blobObject } = await this.walrusClient.writeBlob({
+          blob: fileBytes,
+          deletable: false,  // permanent storage
+          epochs: 5,         // lưu trữ 5 epochs
+          signer: this.keypair,
+        });
 
-        const blobId = blobIdMatch[1];
         console.log(`✅ Uploaded to Walrus!`);
         console.log(`📦 Blob ID: ${blobId}`);
+        console.log(`📦 Blob Object ID: ${blobObject.id.id}`);
 
         return blobId;
       } catch (error: any) {
+        // Xử lý lỗi có thể retry được
+        if (error instanceof RetryableWalrusClientError) {
+          console.warn(`⚠️ Retryable error on attempt ${attempt}/${maxRetries}. Resetting client...`);
+          this.walrusClient.reset();
+          
+          if (attempt < maxRetries) {
+            const waitTime = attempt * 5000;
+            console.log(`⏳ Retrying in ${waitTime/1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+            continue;
+          }
+        }
+        
         console.error(`❌ Upload attempt ${attempt}/${maxRetries} failed:`, error.message);
         
-        if (error.stderr) {
-          console.error(`CLI stderr: ${error.stderr}`);
-        }
-        
-        if (attempt < maxRetries) {
-          const waitTime = attempt * 5000;
-          console.log(`⏳ Retrying in ${waitTime/1000}s...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        } else {
+        if (attempt >= maxRetries) {
           throw error;
         }
+        
+        const waitTime = attempt * 5000;
+        console.log(`⏳ Retrying in ${waitTime/1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
     
@@ -88,7 +90,7 @@ export class WalrusUploader {
   async updateCardImageUrl(cardId: string, blobId: string): Promise<void> {
     console.log(`\n🔄 Updating card image URL onchain...`);
     
-    const walrusUrl = `https://aggregator.walrus-testnet.walrus.space/v1/${blobId}`;
+    const walrusUrl = this.getWalrusUrl(blobId);
 
     try {
       const tx = new Transaction();
