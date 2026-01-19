@@ -231,23 +231,25 @@ export const ForgeDialog: React.FC<ForgeDialogProps> = ({
     <div className="fixed inset-0 z-100 flex items-center justify-center backdrop-blur-sm">
       <div className="w-full max-w-3xl min-h-[600px] bg-black/90 border border-primary/30 rounded-xl p-12 relative shadow-[0_0_50px_rgba(0,229,255,0.2)] overflow-hidden flex flex-col justify-center">
         {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
-        >
-          <span className="material-symbols-outlined">close</span>
-        </button>
+        <div>
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+          >
+            <span className="material-symbols-outlined">close</span>
+          </button>
 
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <span className="material-symbols-outlined text-3xl text-primary animate-pulse">
-            rocket_launch
-          </span>
-          <div>
-            <h2 className="text-xl font-black uppercase tracking-widest text-white">
-              Neural Forge
-            </h2>
-            <div className="h-0.5 w-full bg-linear-to-r from-primary/50 to-transparent mt-1"></div>
+          {/* Header */}
+          <div className="absolute top-4 left-4 flex items-center gap-3 mb-6">
+            <span className="material-symbols-outlined text-3xl text-primary animate-pulse">
+              rocket_launch
+            </span>
+            <div>
+              <h2 className="text-xl font-black uppercase tracking-widest text-white">
+                Neural Forge
+              </h2>
+              <div className="h-0.5 w-full bg-linear-to-r from-primary/50 to-transparent mt-1"></div>
+            </div>
           </div>
         </div>
 
