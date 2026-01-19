@@ -2,11 +2,6 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getFullnodeUrl, SuiClient } from "@mysten/sui/client";
-import { Ed25519Keypair } from "@mysten/sui/keypairs/ed25519";
-import { decodeSuiPrivateKey } from "@mysten/sui/cryptography";
-import { walrus, RetryableWalrusClientError } from "@mysten/walrus";
-
 import * as fs from "fs";
 import * as path from "path";
 
@@ -27,10 +22,13 @@ app.use(express.json({ limit: "50mb" }));
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-const walrusClient = new SuiClient({
-  url: getFullnodeUrl("testnet"),
-  network: "testnet",
-} as any).$extend(walrus());
+// Walrus Configuration
+const PUBLISHER_URL =
+  process.env.WALRUS_PUBLISHER_URL ||
+  "https://publisher.walrus-testnet.walrus.space";
+const AGGREGATOR_URL =
+  process.env.WALRUS_AGGREGATOR_URL ||
+  "https://aggregator.walrus-testnet.walrus.space";
 
 const RARITY_NAMES = ["Common", "Uncommon", "Epic", "Legendary"];
 
@@ -48,27 +46,6 @@ const ELEMENT_STYLES: Record<string, string> = {
   Light:
     "surrounded by radiant light and sparkles, bright white and golden tones, divine atmosphere",
 };
-
-// Initialize keypair
-let walrusKeypair: Ed25519Keypair | null = null;
-if (process.env.SUI_PRIVATE_KEY) {
-  try {
-    const privateKey = process.env.SUI_PRIVATE_KEY;
-    if (privateKey.startsWith("suiprivkey")) {
-      const decoded = decodeSuiPrivateKey(privateKey);
-      walrusKeypair = Ed25519Keypair.fromSecretKey(decoded.secretKey);
-    } else {
-      const privateKeyHex = privateKey.replace("0x", "");
-      const privateKeyBytes = Uint8Array.from(
-        Buffer.from(privateKeyHex, "hex"),
-      );
-      walrusKeypair = Ed25519Keypair.fromSecretKey(privateKeyBytes);
-    }
-    console.log("✓ Walrus keypair initialized");
-  } catch (error) {
-    console.warn("⚠ Failed to initialize Walrus keypair:", error);
-  }
-}
 
 console.log("🖼️  Checking reference images...");
 const referencesDir = path.join(process.cwd(), "references");
@@ -259,16 +236,6 @@ app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Image URL is required" });
     }
 
-    if (!walrusKeypair) {
-      console.warn("⚠ No Walrus keypair configured, using placeholder");
-      return res.json({
-        success: true,
-        walrusUrl: imageUrl,
-        blobId: `placeholder_${Date.now()}`,
-        note: "Walrus keypair not configured. Set SUI_PRIVATE_KEY in .env to enable real uploads.",
-      });
-    }
-
     console.log(`📤 Uploading to Walrus: ${imageName || "image"}`);
 
     const imageResponse = await fetch(imageUrl);
@@ -281,50 +248,54 @@ app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
 
     console.log(`📦 Image size: ${imageBlob.length} bytes`);
 
-    const maxRetries = 3;
+    const maxRetries = 5;
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         console.log(`🔄 Upload attempt ${attempt}/${maxRetries}...`);
 
-        const { blobId, blobObject } = await walrusClient.walrus.writeBlob({
-          blob: imageBlob,
-          deletable: false,
-          epochs: 5,
-          signer: walrusKeypair,
+        // Send PUT request to Walrus Publisher
+        console.log(`📡 PUT ${PUBLISHER_URL}/v1/blobs?epochs=5`);
+        const response = await fetch(`${PUBLISHER_URL}/v1/blobs?epochs=5`, {
+          method: "PUT",
+          body: imageBlob,
         });
 
-        console.log(`✅ Uploaded to Walrus!`);
-        console.log(`📦 Blob ID: ${blobId}`);
-        console.log(`📦 Blob Object ID: ${blobObject.id.id}`);
+        if (response.status === 200) {
+          const info: any = await response.json();
+          console.log(`✅ Uploaded to Walrus!`, info);
 
-        const walrusUrl = `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${blobId}`;
+          let blobId;
+          let objectId; // This is the Sui Object ID (if newly created) or transaction digest (if already certified)
 
-        return res.json({
-          success: true,
-          walrusUrl,
-          blobId,
-          objectId: blobObject.id.id,
-          note: "Image uploaded to Walrus decentralized storage",
-        });
+          if ("newlyCreated" in info) {
+            blobId = info.newlyCreated.blobObject.blobId;
+            objectId = info.newlyCreated.blobObject.id;
+          } else if ("alreadyCertified" in info) {
+            blobId = info.alreadyCertified.blobId;
+            objectId = info.alreadyCertified.event.txDigest; // Or similar ID, keeping consistent with request
+          } else {
+            throw new Error("Unhandled successful response format from Walrus");
+          }
+
+          console.log(`📦 Blob ID: ${blobId}`);
+
+          const walrusUrl = `${AGGREGATOR_URL}/v1/blobs/${blobId}`;
+
+          return res.json({
+            success: true,
+            walrusUrl,
+            blobId,
+            objectId,
+            note: "Image uploaded to Walrus decentralized storage (HTTP API)",
+          });
+        } else {
+          const errorText = await response.text();
+          throw new Error(`Walrus HTTP Error ${response.status}: ${errorText}`);
+        }
       } catch (error: any) {
         lastError = error;
-
-        if (error instanceof RetryableWalrusClientError) {
-          console.warn(
-            `⚠️ Retryable error on attempt ${attempt}/${maxRetries}. Resetting client...`,
-          );
-          walrusClient.walrus.reset();
-
-          if (attempt < maxRetries) {
-            const waitTime = attempt * 5000;
-            console.log(`⏳ Retrying in ${waitTime / 1000}s...`);
-            await new Promise((resolve) => setTimeout(resolve, waitTime));
-            continue;
-          }
-        }
-
         console.error(
           `❌ Upload attempt ${attempt}/${maxRetries} failed:`,
           error.message,
@@ -360,7 +331,5 @@ app.listen(PORT, () => {
   console.log(
     `🔑 Gemini API Key: ${process.env.GEMINI_API_KEY ? "✓ Set" : "✗ Not set"}`,
   );
-  console.log(
-    `🌊 Walrus Keypair: ${walrusKeypair ? "✓ Configured" : "✗ Not configured"}`,
-  );
+  console.log(`🌊 Walrus API: Using HTTP API at ${PUBLISHER_URL}`);
 });
