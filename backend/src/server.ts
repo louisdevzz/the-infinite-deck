@@ -85,12 +85,10 @@ if (fs.existsSync(refPath)) {
 }
 console.log("");
 
-// Health check
 app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Generate card metadata using Gemini
 app.post("/api/generate-metadata", async (req: Request, res: Response) => {
   try {
     const { prompt } = req.body;
@@ -144,9 +142,6 @@ No additional text, just the JSON.`;
   }
 });
 
-// ✨ CẬP NHẬT: Generate card image WITH REFERENCE
-
-// Generate card image using Gemini WITH REFERENCE
 app.post("/api/generate-image", async (req: Request, res: Response) => {
   try {
     const { name, element, description, rarity = 0 } = req.body;
@@ -162,7 +157,6 @@ app.post("/api/generate-image", async (req: Request, res: Response) => {
     const elementStyle =
       ELEMENT_STYLES[element] || "mystical energy surrounding";
 
-    // Load reference image
     let referenceBase64: string | null = null;
     const referenceFilename = REFERENCE_IMAGE;
     const referencePath = path.join(
@@ -179,7 +173,6 @@ app.post("/api/generate-image", async (req: Request, res: Response) => {
       console.warn(`⚠️  Reference image not found: ${referencePath}`);
     }
 
-    // Enhanced prompt with reference instructions
     const imagePrompt = `Create a high-quality fantasy character illustration for a trading card game.
 
 ${referenceBase64 ? "REFERENCE IMAGE: Study the art style, quality, and atmosphere from the reference image. Learn from its composition, lighting, and detail level. But DO NOT copy any frames, borders, text, or UI elements." : ""}
@@ -209,7 +202,6 @@ Focus on creating beautiful, powerful character art with ${element} theme that m
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
 
-    // ✅ FIX: Build parts array correctly
     const parts: any[] = [imagePrompt];
 
     if (referenceBase64) {
@@ -221,11 +213,9 @@ Focus on creating beautiful, powerful character art with ${element} theme that m
       });
     }
 
-    // ✅ FIX: Call generateContent with array directly
     const result = await model.generateContent(parts);
     const response = await result.response;
 
-    // Extract image from response
     let imageBase64: string | null = null;
 
     for (const candidate of response.candidates || []) {
@@ -261,7 +251,6 @@ Focus on creating beautiful, powerful character art with ${element} theme that m
   }
 });
 
-// Upload image to Walrus
 app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
   try {
     const { imageUrl, imageName } = req.body;
@@ -282,7 +271,6 @@ app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
 
     console.log(`📤 Uploading to Walrus: ${imageName || "image"}`);
 
-    // Fetch the image
     const imageResponse = await fetch(imageUrl);
     if (!imageResponse.ok) {
       throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
@@ -293,7 +281,6 @@ app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
 
     console.log(`📦 Image size: ${imageBlob.length} bytes`);
 
-    // Upload to Walrus with retry logic
     const maxRetries = 3;
     let lastError: Error | null = null;
 
@@ -301,11 +288,10 @@ app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
       try {
         console.log(`🔄 Upload attempt ${attempt}/${maxRetries}...`);
 
-        // Upload using Walrus SDK
         const { blobId, blobObject } = await walrusClient.walrus.writeBlob({
           blob: imageBlob,
-          deletable: false, // permanent storage
-          epochs: 5, // store for 5 epochs (~5 days on testnet)
+          deletable: false,
+          epochs: 5,
           signer: walrusKeypair,
         });
 
@@ -313,7 +299,6 @@ app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
         console.log(`📦 Blob ID: ${blobId}`);
         console.log(`📦 Blob Object ID: ${blobObject.id.id}`);
 
-        // Construct the Walrus URL - must include /blobs/ path
         const walrusUrl = `https://aggregator.walrus-testnet.walrus.space/v1/blobs/${blobId}`;
 
         return res.json({
@@ -326,7 +311,6 @@ app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
       } catch (error: any) {
         lastError = error;
 
-        // Handle retryable errors
         if (error instanceof RetryableWalrusClientError) {
           console.warn(
             `⚠️ Retryable error on attempt ${attempt}/${maxRetries}. Resetting client...`,
@@ -356,7 +340,6 @@ app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
       }
     }
 
-    // All retries failed
     throw new Error(
       `Failed to upload to Walrus after ${maxRetries} attempts: ${lastError?.message}`,
     );
@@ -369,7 +352,6 @@ app.post("/api/upload-to-walrus", async (req: Request, res: Response) => {
   }
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Backend server running on http://localhost:${PORT}`);
   console.log(
